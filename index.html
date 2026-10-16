@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Sistema de evaluación de 215 postulantes, versión GitHub estática con exportación por formulario y global">
-<title>Evaluación de postulantes · GitHub</title>
+<title>Evaluación de postulantes · Cloudflare</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 :root{--navy:#142c49;--navy2:#244a76;--blue:#315ee8;--blue-dark:#2146c8;--blue-soft:#edf2ff;--bg:#f3f6fb;--line:#dbe3ef;--muted:#63728a;--ink:#172338;--red:#b42318;--redbg:#fff0ee;--green:#087443;--greenbg:#e6f7ec;--amber:#8a5700;--amberbg:#fff5d8;--white:#fff;--shadow:0 8px 28px rgba(17,39,70,.06)}
@@ -51,9 +51,9 @@
 
   <section class="card" id="overview">
     <div class="topline">
-      <div><strong>Versión de revisión local</strong><div class="mini">El autoguardado funciona en este navegador. Todavía no está conectado a la nube ni comparte cambios entre computadoras.</div></div>
+      <div><strong>Versión final conectada a Cloudflare</strong><div class="mini">Los cambios se guardan en la base de datos compartida. Usa Actualizar para recuperar los últimos cambios de otros evaluadores.</div></div>
       <div class="actions">
-        <span id="saveState" class="save-state">Autoguardado local activo</span>
+        <span id="saveState" class="save-state">Conectando con Cloudflare…</span>
         <button class="soft smallbtn" id="refreshBtn" type="button" title="Actualizar la vista con los datos guardados">Actualizar</button>
         <button class="soft smallbtn" id="undoBtn" type="button" disabled>Deshacer</button>
         <button class="soft smallbtn" id="redoBtn" type="button" disabled>Rehacer</button>
@@ -116,7 +116,7 @@
     <div class="notice"><strong>Puntaje final máximo: 70 puntos.</strong> C-1 (35) + C-2 (máximo 35). Si faltan componentes de C-2, el reporte mostrará el puntaje pendiente en blanco, sin inventar un total final.</div>
     <div class="group-grid" id="form4Groups"></div>
   </section>
-  <div class="footer">Versión HTML de revisión · 215 postulantes originales · Autoguardado local · Exportaciones por formulario y global basadas en ANEXOS.xlsx · Revisión local</div>
+  <div class="footer">Versión final · 215 postulantes originales · Autoguardado compartido en Cloudflare · Exportaciones por formulario y global basadas en ANEXOS.xlsx</div>
 </main>
 
 <dialog class="modal" id="causeDialog" aria-labelledby="causeTitle">
@@ -159,19 +159,27 @@ const $=id=>document.getElementById(id);
 const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 const normalize=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
 const duplicateSet=new Set(INITIAL_DUPLICATES.map(normalize));
+const SYNC_FIELDS=['a1','a2','c1doc','c2doc','v1Decision','v1Cause','v1Other','v3Status','v3Cause','v3Other','education','general','specific','notes'];
 let records=[];let saveTimer=null;let storageAvailable=true;let activeCause={id:null,type:null,selected:''};
+let cloudConnected=false;let cloudSnapshot=new Map();let cloudFlushPromise=null;
 const undoStack=[];const redoStack=[];const HISTORY_LIMIT=60;
 function freshRecords(){return INITIAL_RECORDS.map((r,i)=>({id:i+1,num:r.num,name:r.name,role:r.role,a1:'',a2:'',c1doc:'',c2doc:'',v1Decision:'',v1Cause:'',v1Other:'',v3Status:'',v3Cause:'',v3Other:'',education:'',general:'',specific:'',notes:''}));}
 function loadRecords(){const base=freshRecords();try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const saved=JSON.parse(raw);if(saved&&Array.isArray(saved.records)){const byId=new Map(saved.records.map(r=>[Number(r.id),r]));records=base.map(b=>({...b,...(byId.get(b.id)||{}),id:b.id,num:b.num,name:b.name,role:b.role}));}else records=base;}else records=base;}catch(e){records=base;storageAvailable=false;}}
 function setSaveState(text,kind='ok'){const el=$('saveState');if(!el)return;el.textContent=text;el.className='save-state'+(kind==='warn'?' warn':kind==='error'?' error':'');}
-function persistNow(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:3,savedAt:new Date().toISOString(),records}));storageAvailable=true;setSaveState('Guardado en este navegador ✓','ok');}catch(e){storageAvailable=false;setSaveState('No se pudo guardar localmente','error');}}
-function queueSave(){setSaveState('Guardando…','warn');clearTimeout(saveTimer);saveTimer=setTimeout(persistNow,160);}
+function persistNow(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:4,savedAt:new Date().toISOString(),records}));storageAvailable=true;return true;}catch(e){storageAvailable=false;return false;}}
+async function apiRequest(path,options={}){const response=await fetch(path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})},cache:'no-store'});let data={};try{data=await response.json();}catch(e){}if(!response.ok)throw new Error(data.error||`Error HTTP ${response.status}`);return data;}
+function snapshotRecord(r){const out={};for(const key of SYNC_FIELDS)out[key]=String(r[key]??'');return out;}
+function setCloudSnapshot(){cloudSnapshot=new Map(records.map(r=>[Number(r.id),snapshotRecord(r)]));}
+async function loadCloudRecords(){setSaveState('Conectando con Cloudflare…','warn');const base=freshRecords();let response=await apiRequest('/api/records');if(!Array.isArray(response.records))throw new Error('La API no devolvió una lista de registros.');if(response.records.length<base.length){await apiRequest('/api/records',{method:'POST',body:JSON.stringify({seed:base})});response=await apiRequest('/api/records');}if(!Array.isArray(response.records)||!response.records.length)throw new Error('La base de datos no devolvió los postulantes.');const byId=new Map(response.records.map(r=>[Number(r.id),r]));records=base.map(b=>{const remote=byId.get(b.id)||{};const merged={...b,...remote,id:b.id,num:b.num,name:b.name,role:b.role};for(const key of SYNC_FIELDS)merged[key]=String(remote[key]??'');return merged;});cloudConnected=true;setCloudSnapshot();persistNow();renderAll();setSaveState('Autoguardado en Cloudflare ✓','ok');updateHistoryButtons();}
+async function flushCloudChanges(){if(cloudFlushPromise){const priorResult=await cloudFlushPromise;if(!priorResult)return false;return flushCloudChanges();}const run=(async()=>{if(!cloudConnected){setSaveState('Sin conexión con Cloudflare · cambios locales conservados','error');return false;}const changes=[];for(const r of records){const prior=cloudSnapshot.get(Number(r.id))||{};for(const key of SYNC_FIELDS){const value=String(r[key]??'');if(value!==String(prior[key]??''))changes.push({id:Number(r.id),key,value});}}if(!changes.length){persistNow();setSaveState('Guardado en Cloudflare ✓','ok');return true;}setSaveState(`Guardando ${changes.length} cambio(s) en Cloudflare…`,'warn');try{for(const change of changes){await apiRequest('/api/records',{method:'PATCH',body:JSON.stringify(change)});const prior=cloudSnapshot.get(change.id)||{};prior[change.key]=change.value;cloudSnapshot.set(change.id,prior);}persistNow();setSaveState('Autoguardado en Cloudflare ✓','ok');return true;}catch(error){persistNow();setSaveState('Error al guardar en la nube · respaldo local conservado','error');console.error('Cloudflare save:',error);return false;}})();cloudFlushPromise=run;try{return await run;}finally{cloudFlushPromise=null;}}
+async function syncAllToCloud(){persistNow();if(!cloudConnected){setSaveState('Sin conexión con Cloudflare · no se pudo sincronizar','error');return false;}setSaveState('Sincronizando registros con Cloudflare…','warn');try{const payload=records.map(r=>({id:Number(r.id),...snapshotRecord(r)}));await apiRequest('/api/records',{method:'POST',body:JSON.stringify({action:'sync',records:payload})});cloudSnapshot=new Map(payload.map(r=>[r.id,Object.fromEntries(SYNC_FIELDS.map(key=>[key,String(r[key]??'')]))]));persistNow();setSaveState('Cambios sincronizados en Cloudflare ✓','ok');return await flushCloudChanges();}catch(error){setSaveState('Error al sincronizar · respaldo local conservado','error');console.error('Cloudflare bulk sync:',error);return false;}}
+function queueSave(){persistNow();if(!cloudConnected){setSaveState('Guardado localmente · Cloudflare sin conexión','error');return;}setSaveState('Guardando en Cloudflare…','warn');clearTimeout(saveTimer);saveTimer=setTimeout(()=>flushCloudChanges(),220);}
 function updateHistoryButtons(){const u=$('undoBtn'),r=$('redoBtn');if(u)u.disabled=undoStack.length===0;if(r)r.disabled=redoStack.length===0;}
 function pushHistory(){const snap=JSON.stringify(records);if(undoStack[undoStack.length-1]!==snap)undoStack.push(snap);if(undoStack.length>HISTORY_LIMIT)undoStack.shift();redoStack.length=0;updateHistoryButtons();}
-function applyHistorySnapshot(target,source){if(!target.length)return;source.push(JSON.stringify(records));if(source.length>HISTORY_LIMIT)source.shift();records=JSON.parse(target.pop());clearTimeout(saveTimer);persistNow();renderAll();updateHistoryButtons();}
+function applyHistorySnapshot(target,source){if(!target.length)return;source.push(JSON.stringify(records));if(source.length>HISTORY_LIMIT)source.shift();records=JSON.parse(target.pop());clearTimeout(saveTimer);persistNow();renderAll();updateHistoryButtons();syncAllToCloud();}
 function undoChange(){applyHistorySnapshot(undoStack,redoStack);}
 function redoChange(){applyHistorySnapshot(redoStack,undoStack);}
-function refreshView(){clearTimeout(saveTimer);persistNow();if(storageAvailable)loadRecords();renderAll();setSaveState(storageAvailable?'Vista actualizada desde el último guardado ✓':'Vista actualizada; el almacenamiento local no está disponible','ok');updateHistoryButtons();}
+async function refreshView(){clearTimeout(saveTimer);const saved=await flushCloudChanges();if(!saved)return;try{await loadCloudRecords();setSaveState('Vista actualizada desde Cloudflare ✓','ok');}catch(error){setSaveState('No se pudo actualizar desde Cloudflare','error');alert('No se pudieron actualizar los datos desde la nube. No se reemplazaron los datos actuales.\n\n'+error.message);}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function itemForRole(role){return ITEMS.find(i=>i.role===role)||{item:'—',label:role,count:0};}
 function roleLabel(role){return itemForRole(role).label||role;}
@@ -247,7 +255,7 @@ async function exportFormWorkbook(formKey){
 }
 
 function downloadBackup(){const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json;charset=utf-8'});downloadBlob(blob,'respaldo_evaluacion_215_postulantes.json');}
-function importBackupFile(file){const reader=new FileReader();reader.onload=()=>{try{const obj=JSON.parse(reader.result);if(!obj||!Array.isArray(obj.records)||obj.records.length!==INITIAL_RECORDS.length)throw new Error('El archivo no contiene los 215 registros esperados.');pushHistory();const base=freshRecords();const byId=new Map(obj.records.map(r=>[Number(r.id),r]));records=base.map(b=>({...b,...(byId.get(b.id)||{}),id:b.id,num:b.num,name:b.name,role:b.role}));persistNow();renderAll();alert('Respaldo importado. Los 215 nombres, cargos e ítems originales se conservaron.');}catch(e){alert('No se pudo importar el respaldo: '+e.message);}};reader.readAsText(file);}
+function importBackupFile(file){const reader=new FileReader();reader.onload=()=>{try{const obj=JSON.parse(reader.result);if(!obj||!Array.isArray(obj.records)||obj.records.length!==INITIAL_RECORDS.length)throw new Error('El archivo no contiene los 215 registros esperados.');pushHistory();const base=freshRecords();const byId=new Map(obj.records.map(r=>[Number(r.id),r]));records=base.map(b=>({...b,...(byId.get(b.id)||{}),id:b.id,num:b.num,name:b.name,role:b.role}));persistNow();renderAll();syncAllToCloud().then(ok=>alert(ok?'Respaldo importado y sincronizado con Cloudflare. Los 215 nombres, cargos e ítems originales se conservaron.':'Respaldo importado localmente, pero no se pudo sincronizar con Cloudflare. Descarga un respaldo y revisa la conexión.'));}catch(e){alert('No se pudo importar el respaldo: '+e.message);}};reader.readAsText(file);}
 
 // Navegación y filtros
 document.querySelectorAll('.tabbtn').forEach(btn=>btn.addEventListener('click',()=>activateTab(btn.dataset.tab)));
@@ -259,12 +267,12 @@ $('f3Rows').addEventListener('input',e=>{const el=e.target;if(!el.dataset.key||!
 $('f3Rows').addEventListener('change',e=>{const el=e.target;if(!el.dataset.key||!el.dataset.id)return;const key=el.dataset.key;if(!['education','general','specific'].includes(key))return;const r=records.find(x=>x.id===Number(el.dataset.id));if(!r)return;const max=key==='education'?10:key==='general'?15:10;let val=String(el.value??'').trim();if(String(r[key]??'')!==val)pushHistory();if(val!==''&&!Number.isFinite(Number(val)))val='';if(val!==''&&Number(val)<0)val='0';if(val!==''&&Number(val)>max)val=String(max);if(key==='education'&&val!==''&&!['0','4','8','10'].includes(val))val='0';r[key]=val;el.value=val;queueSave();updateC2Row(r.id);});
 $('causeOptions').addEventListener('change',()=>{activeCause.selected=selectedCauseId();updateOtherVisibility();});$('causeSearch').addEventListener('input',()=>{const type=activeCause.type||'v1';renderCauseOptions(type==='v1'?CAUSALS_V1:CAUSALS_V3,activeCause.selected||'');});$('saveCause').addEventListener('click',saveCauseSelection);$('cancelCause').addEventListener('click',()=>$('causeDialog').close());$('closeCauseTop').addEventListener('click',()=>$('causeDialog').close());
 $('toggleCriteria').addEventListener('click',()=>{const c=$('criteriaContent');const hidden=c.classList.toggle('hide');$('toggleCriteria').textContent=hidden?'Mostrar criterios':'Contraer criterios';});
-$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);window.addEventListener('storage',e=>{if(e.key===STORAGE_KEY){loadRecords();renderAll();setSaveState('Datos actualizados desde otra pestaña ✓','ok');}});
+$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);
 $('backupBtn').addEventListener('click',downloadBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importBackupFile(file);e.target.value='';});
-$('resetBtn').addEventListener('click',()=>{if(!confirm('¿Restablecer todas las evaluaciones, causales y puntajes? Se conservarán los 215 nombres y sus ítems. Podrás usar Deshacer mientras esta página siga abierta.'))return;pushHistory();records=freshRecords();persistNow();renderAll();setSaveState('Evaluaciones restablecidas ✓','ok');});
+$('resetBtn').addEventListener('click',()=>{if(!confirm('¿Restablecer todas las evaluaciones, causales y puntajes en Cloudflare? Se conservarán los 215 nombres y sus ítems. Podrás usar Deshacer mientras esta página siga abierta.'))return;pushHistory();records=freshRecords();persistNow();renderAll();syncAllToCloud();});
 $('f1TopBtn').addEventListener('click',()=>{$('f1TableWrap').scrollTo({left:0,top:0,behavior:'smooth'});$('f1TopScroll').scrollTo({left:0,behavior:'smooth'});});$('toTopBtn').addEventListener('click',()=>$('top').scrollIntoView({behavior:'smooth'}));
 
-renderItemOptions();loadRecords();renderAll();updateHistoryButtons();if(!storageAvailable)setSaveState('Almacenamiento local no disponible','error');else setSaveState('Autoguardado local activo','ok');window.addEventListener('resize',()=>{syncHorizontalScroll('f1TopScroll','f1TableWrap');syncHorizontalScroll('f3TopScroll','f3TableWrap');});
+renderItemOptions();loadRecords();renderAll();updateHistoryButtons();setSaveState('Conectando con Cloudflare…','warn');loadCloudRecords().catch(error=>{cloudConnected=false;setSaveState('Sin conexión con Cloudflare · revise /api/records','error');console.error('Cloudflare load:',error);});window.addEventListener('resize',()=>{syncHorizontalScroll('f1TopScroll','f1TableWrap');syncHorizontalScroll('f3TopScroll','f3TableWrap');});
 </script>
 </body>
 </html>
