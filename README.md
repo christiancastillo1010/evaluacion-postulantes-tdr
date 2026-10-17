@@ -66,3 +66,12 @@ El código agrupa las actualizaciones para evitar una solicitud por cada campo m
 ## Seguridad
 
 La separación por módulo evita mezclar datos accidentalmente, pero no reemplaza autenticación. Si cada evaluador debe tener acceso exclusivo a su módulo, configura Cloudflare Access o autenticación con permisos.
+
+
+## Exportación global corregida
+
+- El exportador sincroniza los cambios pendientes del módulo activo antes de generar el libro.
+- Cada módulo y universo exporta únicamente sus propios registros; no mezcla los datos de otros evaluadores.
+- El Excel incluye pestañas para los ítems que sí tienen postulantes en el universo activo, ordenados desde el primer ítem con datos. Esto evita que las primeras pestañas vacías parezcan un archivo sin información.
+- Si no se pueden asociar los registros con un ítem o el libro queda incompleto, la aplicación muestra un error y no descarga un archivo vacío.
+- El nombre del archivo identifica el módulo/evaluador y el universo exportado.

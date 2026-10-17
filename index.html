@@ -83,7 +83,7 @@
         <button class="primary" id="exportOfficialBtn" title="Descargar los cuatro formularios para todos los ítems del universo activo">Exportar global · todos los ítems</button>
       </div>
     </div>
-    <div class="notice"><strong>Exportación oficial:</strong> se utiliza el archivo ANEXOS.xlsx como plantilla para conservar el formato, encabezados, celdas combinadas y distribución. Puedes exportar cada formulario por separado (8 pestañas por archivo) o descargar el libro global (pestañas por formulario e ítem).</div>
+    <div class="notice"><strong>Exportación oficial:</strong> se utiliza el archivo ANEXOS.xlsx como plantilla para conservar el formato, encabezados, celdas combinadas y distribución. Puedes exportar cada formulario por separado o descargar el libro global. La exportación incluye solo los ítems con postulantes del módulo y universo activos; cada evaluador descarga sus propios datos.</div>
     <div class="stats">
       <div class="stat"><strong id="statTotal">215</strong><span>Postulantes</span></div>
       <div class="stat"><strong id="statContinue">0</strong><span>Continúa · V-1</span></div>
@@ -429,31 +429,115 @@ function parseUniverseRows(rows){
 }
 async function importUniverseFile(file){try{if(!cloudConnected)throw new Error('Primero espera a que el indicador confirme “Autoguardado en Cloudflare”. Así evitamos importar un universo con identificadores que puedan coincidir con registros de la nube.');if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica la conexión a internet.');let rows=[];if(file.name.toLowerCase().endsWith('.csv')){rows=parseCSVRows(await file.text());}else{const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());const ws=wb.getWorksheet('UNIVERSO')||wb.worksheets[0];if(!ws)throw new Error('El libro no contiene una hoja de datos.');ws.eachRow({includeEmpty:false},row=>rows.push(row.values.slice(1)));}const parsed=parseUniverseRows(rows);const label=prompt('Nombre para la nueva pestaña / universo:');if(!label||!label.trim())return;const name=label.trim();const slugBase=safeFileName(name).toLowerCase()||'universo';let universe=`${slugBase}_${Date.now().toString(36)}`;const used=new Set(allRecords.map(r=>r.universe));while(used.has(universe))universe=`${slugBase}_${Math.random().toString(36).slice(2,7)}`;const maxId=allRecords.reduce((m,r)=>Math.max(m,Number(r.id)||0),0);const counts=new Map();const newRows=parsed.map((p,i)=>{const role=`${universe}::${p.itemNo}::${p.itemLabel}`;const num=(counts.get(role)||0)+1;counts.set(role,num);return {id:maxId+i+1,num,name:p.name,role,universe,universeName:name,itemNo:p.itemNo,itemLabel:p.itemLabel,a1:'',a2:'',c1doc:'',c2doc:'',v1Decision:'',v1Cause:'',v1Other:'',v3Status:'',v3Cause:'',v3Other:'',education:'',general:'',specific:'',notes:''};});if(cloudConnected){setSaveState('Importando universo a Cloudflare…','warn');await apiRequest('/api/records',{method:'POST',body:JSON.stringify({seed:newRows})});}allRecords.push(...newRows);currentUniverse=universe;records=allRecords.filter(r=>r.universe===currentUniverse);$('f1Search').value='';$('f3Search').value='';$('f1Status').value='todos';persistNow();if(cloudConnected)for(const r of newRows)cloudSnapshot.set(Number(r.id),snapshotRecord(r));renderAll();renderUniverseTabs();try{const meta=await apiRequest('/api/records?action=meta');applySharedMetadata(meta);renderForm1();renderModuleTabs();}catch(metaError){console.warn('No se pudo refrescar la lista global de duplicados:',metaError);}setSaveState('Universo importado y guardado en Cloudflare ✓','ok');alert(`Universo “${name}” importado con ${newRows.length} postulantes y ${new Set(newRows.map(r=>r.itemNo)).size} ítem(s).`);}catch(e){console.error(e);alert('No se pudo importar el universo. '+(e.message||e));}}
 function downloadBlob(blob,filename){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
-async function exportOfficialWorkbook(){if(!validateBeforeExport())return;if(!window.ExcelJS){alert('No se pudo cargar la librería necesaria para crear el Excel con formato. Verifica tu conexión a internet y vuelve a intentarlo.');return;}setSaveState('Preparando Excel oficial…','warn');const btn=$('exportOfficialBtn');btn.disabled=true;btn.textContent='Preparando Excel global…';try{const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);const sources={f1:wb.getWorksheet('FORM 1'),f2:wb.getWorksheet('FORM 2'),f3:wb.getWorksheet('FORM 3'),f4:wb.getWorksheet('FORM 4')};const targets={};const activeForExport=getActiveItems();if(!activeForExport.length)throw new Error('El universo no contiene ítems.');for(let idx=0;idx<activeForExport.length;idx++){const it=activeForExport[idx];for(const form of ['f1','f2','f3','f4']){const name=`${form.toUpperCase()}-Item${it.item}`;targets[`${it.item}:${form}`]=idx===0?sources[form]:cloneWorksheet(wb,sources[form],name);}}for(const form of ['f1','f2','f3','f4'])sources[form].name=`${form.toUpperCase()}-Item${activeForExport[0].item}`;for(const it of getActiveItems()){const list=records.filter(r=>r.role===it.role);const v1list=list.filter(r=>r.v1Decision==='CONTINUA');const eligibleList=list.filter(eligible);populateForm1(targets[`${it.item}:f1`],it,list);populateForm2(targets[`${it.item}:f2`],it,v1list);populateForm3(targets[`${it.item}:f3`],it,eligibleList);populateForm4(targets[`${it.item}:f4`],it,eligibleList);}applyOfficialWorkbookStyles(wb);if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}const buffer=await wb.xlsx.writeBuffer();downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Evaluacion_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}_Formularios_por_Item.xlsx`);setSaveState('Excel oficial preparado ✓','ok');}catch(e){console.error(e);alert('No se pudo generar el Excel oficial con la plantilla ANEXOS. Detalle: '+(e&&e.message?e.message:String(e)));setSaveState('Error al preparar Excel','error');}finally{btn.disabled=false;btn.textContent='Exportar global · todos los ítems';}}
+function getExportItems(rows=records){
+ const groups=new Map();
+ const mainCatalog=activeModule==='principal'&&currentUniverse==='principal';
+ for(const r of rows){
+  if(Number(r.deleted)===1)continue;
+  const role=String(r.role||'').trim();
+  if(!role)continue;
+  const catalog=mainCatalog?ITEMS.find(x=>x.role===role||((Number(r.itemNo)||0)>0&&Number(x.item)===Number(r.itemNo))):null;
+  const key=catalog?catalog.role:role;
+  const itemNo=Number(catalog?.item??r.itemNo??0);
+  const label=String(catalog?.label||r.itemLabel||role).trim();
+  if(!Number.isFinite(itemNo)||itemNo<1||!label)continue;
+  if(!groups.has(key))groups.set(key,{item:itemNo,role:key,label,count:0,type:/ENCUESTADOR/i.test(label)?'ENCUESTADOR':'SUPERVISOR'});
+  groups.get(key).count++;
+ }
+ return [...groups.values()].sort((a,b)=>a.item-b.item||a.label.localeCompare(b.label,'es'));
+}
+function recordsForExportItem(rows,it){
+ return rows.filter(r=>{
+  if(String(r.role||'')===String(it.role))return true;
+  return Number(r.itemNo)===Number(it.item)&&normalize(r.itemLabel||r.role)===normalize(it.label);
+ });
+}
+async function prepareExportSnapshot(){
+ clearTimeout(saveTimer);
+ if(cloudConnected){
+  const saved=await flushCloudChanges();
+  if(!saved)throw new Error('No se pudo confirmar el autoguardado en Cloudflare. No se generó el Excel para evitar exportar datos incompletos.');
+ }
+ let rows=records.filter(r=>Number(r.deleted)!==1&&(!currentUniverse||String(r.universe||'principal')===String(currentUniverse)));
+ if(!rows.length&&cloudConnected){
+  await loadCloudRecords();
+  rows=records.filter(r=>Number(r.deleted)!==1&&(!currentUniverse||String(r.universe||'principal')===String(currentUniverse)));
+ }
+ if(!rows.length)throw new Error(`El módulo ${moduleLabel()} no tiene postulantes en el universo activo. Selecciona el universo correcto o importa/agrega personas antes de exportar.`);
+ const items=getExportItems(rows);
+ if(!items.length)throw new Error('No se pudo relacionar ningún postulante con un ítem válido. Verifica el número de ítem y el cargo de los registros.');
+ const matched=items.reduce((sum,it)=>sum+recordsForExportItem(rows,it).length,0);
+ if(!matched)throw new Error('No se encontró ningún postulante asociado a los ítems de exportación. No se generó un archivo vacío.');
+ return {rows:rows.map(r=>({...r})),items,matched};
+}
+async function exportOfficialWorkbook(){
+ const btn=$('exportOfficialBtn');
+ if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Preparando Excel global…';}
+ setSaveState('Verificando datos del módulo activo…','warn');
+ try{
+  if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica la conexión a internet y vuelve a intentarlo.');
+  const {rows:exportRows,items:activeForExport,matched}=await prepareExportSnapshot();
+  if(!validateBeforeExport())return;
+  const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);
+  const sources={f1:wb.getWorksheet('FORM 1'),f2:wb.getWorksheet('FORM 2'),f3:wb.getWorksheet('FORM 3'),f4:wb.getWorksheet('FORM 4')};
+  for(const [key,ws] of Object.entries(sources))if(!ws)throw new Error(`No se encontró la plantilla oficial del ${key.toUpperCase()} dentro de ANEXOS.xlsx.`);
+  const targets={};
+  for(let idx=0;idx<activeForExport.length;idx++){
+   const it=activeForExport[idx];
+   for(const form of ['f1','f2','f3','f4']){
+    const sheetName=`${form.toUpperCase()}-Item${it.item}`;
+    targets[`${it.item}:${form}`]=idx===0?sources[form]:cloneWorksheet(wb,sources[form],sheetName);
+   }
+  }
+  for(const form of ['f1','f2','f3','f4'])sources[form].name=`${form.toUpperCase()}-Item${activeForExport[0].item}`;
+  for(const it of activeForExport){
+   const list=recordsForExportItem(exportRows,it);
+   if(!list.length)throw new Error(`El ítem ${it.item} no tiene registros asociados; se canceló la exportación para evitar pestañas vacías por error.`);
+   const v1list=list.filter(r=>r.v1Decision==='CONTINUA');
+   const eligibleList=list.filter(eligible);
+   populateForm1(targets[`${it.item}:f1`],it,list);
+   populateForm2(targets[`${it.item}:f2`],it,v1list);
+   populateForm3(targets[`${it.item}:f3`],it,eligibleList);
+   populateForm4(targets[`${it.item}:f4`],it,eligibleList);
+  }
+  applyOfficialWorkbookStyles(wb);
+  if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
+  const buffer=await wb.xlsx.writeBuffer();
+  if(!buffer||buffer.byteLength<5000)throw new Error('El archivo Excel resultante está incompleto. No se descargó.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Evaluacion_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}_GLOBAL.xlsx`);
+  setSaveState(`Exportación global lista ✓ · ${matched} postulantes · ${activeForExport.length} ítems · ${moduleLabel()}`,'ok');
+ }catch(e){console.error('Exportación global:',e);alert('No se pudo generar la exportación global. No se descargó un libro vacío.\n\n'+(e?.message||String(e)));setSaveState('Error al exportar global','error');}
+ finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Exportar global · todos los ítems';delete btn.dataset.oldText;}}
+}
 async function exportFormWorkbook(formKey){
  const config={
-  form1:{sheet:'FORM 1',name:`Formulario_1_V1_V3_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm1,list:it=>records.filter(r=>r.role===it.role)},
-  form2:{sheet:'FORM 2',name:`Formulario_2_Habilitados_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm2,list:it=>records.filter(r=>r.role===it.role&&r.v1Decision==='CONTINUA')},
-  form3:{sheet:'FORM 3',name:`Formulario_3_Puntajes_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm3,list:it=>records.filter(r=>r.role===it.role&&eligible(r))},
-  form4:{sheet:'FORM 4',name:`Formulario_4_Reporte_final_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm4,list:it=>records.filter(r=>r.role===it.role&&eligible(r))}
+  form1:{sheet:'FORM 1',name:`Formulario_1_V1_V3_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm1,list:(rows,it)=>recordsForExportItem(rows,it)},
+  form2:{sheet:'FORM 2',name:`Formulario_2_Habilitados_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm2,list:(rows,it)=>recordsForExportItem(rows,it).filter(r=>r.v1Decision==='CONTINUA')},
+  form3:{sheet:'FORM 3',name:`Formulario_3_Puntajes_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm3,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)},
+  form4:{sheet:'FORM 4',name:`Formulario_4_Reporte_final_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm4,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)}
  }[formKey];
  if(!config)return;
- if(formKey==='form1'&&!validateBeforeExport())return;
- if(!window.ExcelJS){alert('No se pudo cargar la librería ExcelJS. Comprueba la conexión a internet y vuelve a intentarlo.');return;}
  const buttons=[...document.querySelectorAll(`[data-export="${formKey}"]`)];buttons.forEach(b=>{b.disabled=true;b.dataset.oldText=b.textContent;b.textContent='Preparando…';});
- setSaveState('Preparando exportación…','warn');
+ setSaveState('Verificando datos para exportar…','warn');
  try{
+  if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Comprueba la conexión a internet y vuelve a intentarlo.');
+  const {rows:exportRows,items:active}=await prepareExportSnapshot();
+  if(formKey==='form1'&&!validateBeforeExport())throw new Error('Exportación cancelada. Completa las causales obligatorias antes de volver a intentarlo.');
   const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
   const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);const source=wb.getWorksheet(config.sheet);if(!source)throw new Error(`No se encontró la plantilla ${config.sheet}.`);
-  const active=getActiveItems();if(!active.length)throw new Error('El universo no contiene ítems.');const targets=[{it:active[0],ws:source}];
+  const targets=[{it:active[0],ws:source}];
   for(let i=1;i<active.length;i++){const it=active[i];targets.push({it,ws:cloneWorksheet(wb,source,`${formKey.toUpperCase()}-I${it.item}`)});}
   source.name=`${formKey.toUpperCase()}-I${active[0].item}`;
   const keep=new Set(targets.map(x=>x.ws.id));for(const ws of [...wb.worksheets])if(!keep.has(ws.id))wb.removeWorksheet(ws.id);
-  for(const {it,ws} of targets)config.populate(ws,it,config.list(it));
+  let formRows=0;
+  for(const {it,ws} of targets){const list=config.list(exportRows,it);if(formKey==='form1'&&!list.length)throw new Error(`El ítem ${it.item} no tiene postulantes asociados. No se generó un formulario vacío.`);formRows+=list.length;config.populate(ws,it,list);}
   applyOfficialWorkbookStyles(wb);
   if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
-  const buffer=await wb.xlsx.writeBuffer();downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),config.name);setSaveState('Exportación por formulario preparada ✓','ok');
- }catch(e){console.error(e);alert('No se pudo generar el formulario con el formato de ANEXOS.xlsx. Detalle: '+(e&&e.message?e.message:String(e)));setSaveState('Error al exportar formulario','error');}
+  const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<3000)throw new Error('El archivo Excel resultante está incompleto. No se descargó.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),config.name);
+  setSaveState(`Exportación por formulario lista ✓ · ${formRows} registros · ${moduleLabel()}`,'ok');
+ }catch(e){console.error('Exportación por formulario:',e);alert('No se pudo generar la exportación. No se descargó un archivo vacío.\n\n'+(e?.message||String(e)));setSaveState('Error al exportar formulario','error');}
  finally{buttons.forEach(b=>{b.disabled=false;b.textContent=b.dataset.oldText||`Exportar ${formKey}`;delete b.dataset.oldText;});}
 }
 
