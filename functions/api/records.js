@@ -6,6 +6,8 @@ const EDITABLE_FIELDS = [
 ];
 const EDITABLE_SET = new Set(EDITABLE_FIELDS);
 const MODULE_KEYS = new Set(["principal", "evaluador1", "evaluador2", "evaluador3", "evaluador4", "evaluador5", "evaluador6"]);
+const DEFAULT_MODULE_NAMES = {principal:'Módulo principal',evaluador1:'Evaluador 1',evaluador2:'Evaluador 2',evaluador3:'Evaluador 3',evaluador4:'Evaluador 4',evaluador5:'Evaluador 5',evaluador6:'Evaluador 6'};
+function normalizeName(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -51,6 +53,25 @@ async function ensureTable(db) {
     PRIMARY KEY (module_key, id)
   )`).run();
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_module_records_universe ON module_records(module_key, universe, itemNo, num)").run();
+  await db.prepare(`CREATE TABLE IF NOT EXISTS module_settings (module_key TEXT PRIMARY KEY, display_name TEXT NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`).run();
+  for (const [key, displayName] of Object.entries(DEFAULT_MODULE_NAMES)) {
+    await db.prepare("INSERT OR IGNORE INTO module_settings (module_key,display_name) VALUES (?,?)").bind(key,displayName).run();
+  }
+}
+
+async function readSharedMetadata(db){
+  const settings=await db.prepare("SELECT module_key,display_name FROM module_settings").all();
+  const moduleNames={...DEFAULT_MODULE_NAMES};
+  for(const row of (settings.results||[]))if(MODULE_KEYS.has(row.module_key)&&String(row.display_name||'').trim())moduleNames[row.module_key]=String(row.display_name);
+  const principal=await db.prepare("SELECT name, universe FROM records WHERE TRIM(COALESCE(name,''))<>''").all();
+  const others=await db.prepare("SELECT module_key,name,universe FROM module_records WHERE TRIM(COALESCE(name,''))<>''").all();
+  const counts=new Map();
+  const add=(moduleKey,universe,name)=>{const normalized=normalizeName(name);if(!normalized)return;const key=`${moduleKey}\u0000${String(universe||'')}\u0000${normalized}`;counts.set(key,{count:(counts.get(key)?.count||0)+1,name:String(name).trim(),normalized});};
+  for(const row of (principal.results||[]))add('principal',row.universe,row.name);
+  for(const row of (others.results||[]))add(String(row.module_key||''),row.universe,row.name);
+  const duplicateNames=new Set();
+  for(const value of counts.values())if(value.count>1)duplicateNames.add(value.normalized);
+  return {moduleNames,duplicateNames:[...duplicateNames]};
 }
 
 function normalizeSeedRecord(record) {
@@ -117,6 +138,9 @@ export async function onRequest(context) {
     await ensureTable(db);
     const method=request.method.toUpperCase();
     const isMain=moduleKey==='principal';
+    if(method==='GET' && url.searchParams.get('action')==='meta') {
+      return json(await readSharedMetadata(db));
+    }
     if(method==='GET') {
       const result=isMain
         ? await db.prepare("SELECT * FROM records ORDER BY universe, itemNo, num, id").all()
@@ -141,6 +165,12 @@ export async function onRequest(context) {
     }
     if(method==='POST') {
       const body=await request.json();
+      if(body.action==='renameModule') {
+        const displayName=String(body.displayName||'').trim();
+        if(displayName.length<2||displayName.length>80)return json({error:'El nombre del módulo debe tener entre 2 y 80 caracteres.'},400);
+        await db.prepare(`INSERT INTO module_settings (module_key,display_name,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(module_key) DO UPDATE SET display_name=excluded.display_name,updated_at=CURRENT_TIMESTAMP`).bind(moduleKey,displayName).run();
+        return json({ok:true,module:moduleKey,displayName});
+      }
       if(body.action==='sync') {
         if(!Array.isArray(body.records)) return json({error:'Falta la lista de registros.'},400);
         return json({ok:true,module:moduleKey,updated:await syncRecords(db,body.records,moduleKey)});

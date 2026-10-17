@@ -1,10 +1,8 @@
-# Sistema de evaluación de postulantes — 7 módulos con una sola base D1
+# Sistema de evaluación de postulantes — 7 módulos y una sola base D1
 
-Esta versión mantiene el módulo principal existente y agrega seis módulos de trabajo para Evaluador 1 a Evaluador 6. **Todos los módulos utilizan una única base de datos Cloudflare D1**, mediante el binding `DB`. Los datos se mantienen separados por módulo en la base: el módulo principal conserva la tabla histórica `records`; los seis evaluadores utilizan `module_records` con una clave compuesta por módulo e ID.
+Este paquete mantiene el módulo principal y seis módulos de evaluadores dentro de una única base Cloudflare D1. No requiere Node.js, npm, Wrangler ni terminal.
 
-## Archivos del repositorio
-
-Sube los siguientes archivos a la raíz del repositorio conectado a Cloudflare Pages y conserva las rutas:
+## Archivos que deben quedar en la raíz del repositorio
 
 ```text
 /index.html
@@ -15,49 +13,33 @@ Sube los siguientes archivos a la raíz del repositorio conectado a Cloudflare P
 /functions/api/records.js
 ```
 
-No se necesita Node.js, npm, Wrangler ni terminal.
+## Configuración de Cloudflare
 
-## Cloudflare: una sola base de datos
+Conserva la base D1 existente y el binding `DB`. La API crea de manera automática las tablas adicionales `module_records` y `module_settings`, preservando la tabla histórica `records` del módulo principal.
 
-Conserva la base D1 que ya utilizas. En **Workers & Pages → tu proyecto Pages → Settings → Bindings**, verifica que exista un único binding:
+## Módulos y nombre del evaluador
 
-```text
-Variable name: DB
-Database: tu base D1 existente
-```
+Hay un módulo principal y seis módulos de evaluación. Cada módulo mantiene sus propias evaluaciones y exportaciones dentro de la misma base. Usa el botón **Cambiar nombre · ...** para asignar el nombre real de cada evaluador; el nombre se guarda en D1 y aparece en las pestañas y en los nombres de exportación.
 
-No crees seis bases nuevas ni agregues bindings `DB_EVALUADOR_*`. La API crea automáticamente la tabla `module_records` dentro de la misma base al recibir una solicitud. También verifica y conserva la tabla histórica `records` del módulo principal.
+## Agregar personas o importar un universo
 
-Después de subir los archivos a GitHub, espera el despliegue automático de Cloudflare Pages. Si el binding `DB` ya existe, no necesitas cambiarlo.
+- En el módulo principal, Formulario 1 permite añadir personas a los ítems oficiales existentes.
+- En cualquiera de los seis módulos de evaluador, si todavía no hay un universo, pulsa **+ Agregar persona** y completa el nombre del universo, ítem, cargo y nombre de la persona. Así se crea el universo con su primer registro; luego puedes seguir añadiendo personas manualmente.
+- También puedes pulsar **Descargar modelo de universo (.xlsx)**. El botón genera el archivo de Excel en el navegador. Si ExcelJS no carga, intenta descargar el modelo estático y, como último recurso, descarga un CSV compatible con la importación.
+- El modelo contiene la hoja `UNIVERSO` con columnas `N° DE ÍTEM`, `CARGO / DISTRIBUCIÓN` y `NOMBRE COMPLETO DEL PROPONENTE`.
 
-## Cómo funcionan los módulos
+## Duplicados compartidos
 
-- **Módulo principal:** continúa leyendo y escribiendo la tabla existente `records`, para no alterar el almacenamiento histórico de los 215 postulantes.
-- **Evaluador 1 a Evaluador 6:** guardan sus registros en `module_records`, cada uno bajo su propia clave de módulo. Aunque dos módulos tengan IDs iguales, no se mezclan porque la clave de almacenamiento es `(module_key, id)`.
-- Los universos, nombres, decisiones preliminares, causales, puntajes y exportaciones permanecen separados dentro de cada módulo.
-- Los cambios de nombre desde el Formulario 1 se guardan en el módulo activo.
-- Si V-1 se marca como descalificado/no continúa, V-3 queda como no requerido.
-
-## Importar un universo
-
-1. Entra al módulo del evaluador correspondiente.
-2. Pulsa **Descargar modelo de universo**.
-3. Completa la hoja `UNIVERSO` con número de ítem, cargo/distribución y nombre completo.
-4. Pulsa **Importar otro universo** y selecciona el archivo.
-5. El universo se guarda dentro del módulo activo. No sobrescribe los datos de los demás módulos.
+La API devuelve un catálogo global de nombres duplicados: detecta duplicados dentro de cada universo y comparte el resultado con los siete módulos. La lista histórica `INITIAL_DUPLICATES` también se aplica en todos los módulos. Si un nombre se corrige en Formulario V-1, el módulo actual actualiza el catálogo compartido al guardar; otros usuarios verán los cambios al pulsar **Actualizar** o al cambiar de módulo.
 
 ## Exportaciones
 
-Cada módulo tiene sus propias exportaciones por formulario y global. Los archivos usan la plantilla oficial `ANEXOS.xlsx` y generan pestañas por ítem, sin combinar la información de otros módulos.
+Cada módulo conserva exportaciones por formulario y globales basadas en `ANEXOS.xlsx`, sin mezclar los puntajes de otros módulos.
 
-## Prueba recomendada
+## Actualizar GitHub
 
-1. Abre el módulo principal y verifica que continúe apareciendo el universo original.
-2. Abre Evaluador 1 e importa un universo pequeño de prueba.
-3. Modifica un nombre y una decisión, espera el indicador de guardado y pulsa Actualizar.
-4. Abre Evaluador 2: no debe mostrar los datos de Evaluador 1.
-5. Comprueba las exportaciones individuales y globales desde cada módulo.
+Reemplaza `index.html`, `functions/api/records.js` y `README.md`; conserva `ANEXOS.xlsx`, `MODELO_IMPORTAR_UNIVERSO.xlsx` y `.nojekyll`. Haz commit en la rama conectada a Cloudflare Pages y espera el despliegue automático. No elimines la base ni cambies el binding `DB`.
 
 ## Seguridad
 
-La separación de datos por módulo evita mezclas accidentales, pero los botones de pestañas no constituyen autenticación. Si cada evaluador debe tener acceso exclusivo, protege la aplicación con Cloudflare Access o implementa inicio de sesión y permisos por módulo antes de trabajar con datos sensibles.
+La separación por módulo evita mezclar datos accidentalmente, pero no sustituye la autenticación. Si cada evaluador debe tener acceso exclusivo a su módulo, añade Cloudflare Access o autenticación con permisos.
