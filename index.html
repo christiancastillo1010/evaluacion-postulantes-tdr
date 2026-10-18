@@ -775,8 +775,8 @@ function setWordCellText(cell,value,xmlDoc,options={}){
  const run=xmlDoc.createElementNS(WORD_NS,'w:r');if(runPr)run.appendChild(runPr);setUniformRunFont(run,xmlDoc,{size:options.fontSize||16,bold:options.bold});
  const parts=text.split('\n');parts.forEach((part,i)=>{if(i)run.appendChild(xmlDoc.createElementNS(WORD_NS,'w:br'));const t=xmlDoc.createElementNS(WORD_NS,'w:t');if(/^\s|\s$/.test(part))t.setAttributeNS(XML_NS,'xml:space','preserve');t.textContent=part;run.appendChild(t);});para.appendChild(run);
 }
-function createSpacerParagraph(xmlDoc){const p=xmlDoc.createElementNS(WORD_NS,'w:p');const pPr=xmlDoc.createElementNS(WORD_NS,'w:pPr');const spacing=xmlDoc.createElementNS(WORD_NS,'w:spacing');spacing.setAttributeNS(WORD_NS,'w:before','40');spacing.setAttributeNS(WORD_NS,'w:after','80');spacing.setAttributeNS(WORD_NS,'w:line','120');spacing.setAttributeNS(WORD_NS,'w:lineRule','auto');pPr.appendChild(spacing);p.appendChild(pPr);const r=xmlDoc.createElementNS(WORD_NS,'w:r');const rp=xmlDoc.createElementNS(WORD_NS,'w:rPr');const sz=xmlDoc.createElementNS(WORD_NS,'w:sz');sz.setAttributeNS(WORD_NS,'w:val','2');rp.appendChild(sz);r.appendChild(rp);const t=xmlDoc.createElementNS(WORD_NS,'w:t');t.setAttributeNS(XML_NS,'xml:space','preserve');t.textContent=' ';r.appendChild(t);p.appendChild(r);return p;}
-function createReportCaption(xmlDoc,group,formLabel){const p=xmlDoc.createElementNS(WORD_NS,'w:p');const pPr=xmlDoc.createElementNS(WORD_NS,'w:pPr');const jc=xmlDoc.createElementNS(WORD_NS,'w:jc');jc.setAttributeNS(WORD_NS,'w:val','center');pPr.appendChild(jc);const spacing=xmlDoc.createElementNS(WORD_NS,'w:spacing');spacing.setAttributeNS(WORD_NS,'w:before','100');spacing.setAttributeNS(WORD_NS,'w:after','60');pPr.appendChild(spacing);pPr.appendChild(xmlDoc.createElementNS(WORD_NS,'w:keepNext'));p.appendChild(pPr);const r=xmlDoc.createElementNS(WORD_NS,'w:r');setUniformRunFont(r,xmlDoc,{size:18,bold:true});const t=xmlDoc.createElementNS(WORD_NS,'w:t');t.textContent=`ÍTEM ${group.item} · ${group.label} · ${formLabel}`;r.appendChild(t);p.appendChild(r);return p;}
+function createSpacerParagraph(xmlDoc){const p=xmlDoc.createElementNS(WORD_NS,'w:p');const pPr=xmlDoc.createElementNS(WORD_NS,'w:pPr');const spacing=xmlDoc.createElementNS(WORD_NS,'w:spacing');spacing.setAttributeNS(WORD_NS,'w:before','0');spacing.setAttributeNS(WORD_NS,'w:after','40');spacing.setAttributeNS(WORD_NS,'w:line','120');spacing.setAttributeNS(WORD_NS,'w:lineRule','auto');pPr.appendChild(spacing);p.appendChild(pPr);const r=xmlDoc.createElementNS(WORD_NS,'w:r');const rp=xmlDoc.createElementNS(WORD_NS,'w:rPr');const sz=xmlDoc.createElementNS(WORD_NS,'w:sz');sz.setAttributeNS(WORD_NS,'w:val','2');rp.appendChild(sz);r.appendChild(rp);const t=xmlDoc.createElementNS(WORD_NS,'w:t');t.setAttributeNS(XML_NS,'xml:space','preserve');t.textContent=' ';r.appendChild(t);p.appendChild(r);return p;}
+function createReportCaption(xmlDoc,group,formLabel){const p=xmlDoc.createElementNS(WORD_NS,'w:p');const pPr=xmlDoc.createElementNS(WORD_NS,'w:pPr');const jc=xmlDoc.createElementNS(WORD_NS,'w:jc');jc.setAttributeNS(WORD_NS,'w:val','center');pPr.appendChild(jc);const spacing=xmlDoc.createElementNS(WORD_NS,'w:spacing');spacing.setAttributeNS(WORD_NS,'w:before','20');spacing.setAttributeNS(WORD_NS,'w:after','20');pPr.appendChild(spacing);pPr.appendChild(xmlDoc.createElementNS(WORD_NS,'w:keepNext'));p.appendChild(pPr);const r=xmlDoc.createElementNS(WORD_NS,'w:r');setUniformRunFont(r,xmlDoc,{size:18,bold:true});const t=xmlDoc.createElementNS(WORD_NS,'w:t');t.textContent=`ÍTEM ${group.item} · ${group.label} · ${formLabel}`;r.appendChild(t);p.appendChild(r);return p;}
 function createReportNote(xmlDoc,text){const p=xmlDoc.createElementNS(WORD_NS,'w:p');const pPr=xmlDoc.createElementNS(WORD_NS,'w:pPr');const spacing=xmlDoc.createElementNS(WORD_NS,'w:spacing');spacing.setAttributeNS(WORD_NS,'w:before','40');spacing.setAttributeNS(WORD_NS,'w:after','80');pPr.appendChild(spacing);p.appendChild(pPr);const r=xmlDoc.createElementNS(WORD_NS,'w:r');setUniformRunFont(r,xmlDoc,{size:16});const t=xmlDoc.createElementNS(WORD_NS,'w:t');t.textContent=text;r.appendChild(t);p.appendChild(r);return p;}
 function insertReportTable(body,table,anchor,group,formLabel,xmlDoc,notes=[]){body.insertBefore(createReportCaption(xmlDoc,group,formLabel),anchor);body.insertBefore(table,anchor);notes.forEach(note=>body.insertBefore(createReportNote(xmlDoc,note),anchor));body.insertBefore(createSpacerParagraph(xmlDoc),anchor);}
 function ensureNominationItemColumn(table,xmlDoc){
@@ -828,21 +828,63 @@ function updateReportSummaryTables(body,groups,selected,xmlDoc,sourceGroups=grou
  const qualified=[];
  sourceGroups.forEach(g=>g.rows.filter(r=>eligible(r)&&scoresComplete(r)&&35+c2Total(r)>=50).forEach(r=>qualified.push({item:g.item,label:g.label,r,total:35+c2Total(r)})));
  qualified.sort((a,b)=>a.item-b.item||(Number(a.r.num)||0)-(Number(b.r.num)||0));
- const noQualified=sourceGroups.filter(g=>!g.rows.some(r=>eligible(r)&&scoresComplete(r)));
+ const noQualified=sourceGroups.filter(g=>!g.rows.some(r=>eligible(r)&&scoresComplete(r)&&35+c2Total(r)>=50));
  const tables=Array.from(body.getElementsByTagNameNS(WORD_NS,'tbl'));
  tables.forEach(t=>{const kind=classifyReportTable(t);if(kind==='noqualified'){const template=wordRows(t)[1]||wordRows(t)[0];replaceWordTableRows(t,1,template,noQualified,xmlDoc,(row,g)=>{const c=wordRowCells(row);if(c[0])setWordCellText(c[0],g.item,xmlDoc,{align:'center'});if(c[1])setWordCellText(c[1],g.label,xmlDoc,{});});}else if(kind==='recommendations'){const template=wordRows(t)[1]||wordRows(t)[0];replaceWordTableRows(t,1,template,qualified,xmlDoc,(row,x)=>{const c=wordRowCells(row);const vals=[x.item,x.label,x.r.name,35,c2Total(x.r),x.total];vals.forEach((v,j)=>{if(c[j])setWordCellText(c[j],v,xmlDoc,{align:j===1||j===2?null:'center'});});});}});
 }
 function makeReportGroups(selected){const map=new Map();selected.forEach(r=>{const item=reportItemNo(r);if(!map.has(item))map.set(item,{item,label:reportItemLabel(r),rows:[]});const g=map.get(item);if(!g.label)g.label=reportItemLabel(r);g.rows.push(r);});return [...map.values()].sort((a,b)=>a.item-b.item).map(g=>({...g,rows:g.rows.sort((a,b)=>(Number(a.num)||0)-(Number(b.num)||0)||String(a.name).localeCompare(String(b.name),'es'))}));}
 async function getReportTemplateBytes(){if(reportTemplateBytes)return reportTemplateBytes;const response=await fetch('./INFORME_MODELO_LA_PAZ.docx',{cache:'no-store'});if(!response.ok)throw new Error('No se encontró INFORME_MODELO_LA_PAZ.docx en el paquete desplegado. Vuelve a subir el ZIP completo o carga un modelo Word desde esta ventana.');return await response.arrayBuffer();}
+function wordReportReviewData(selected){
+ const allRows=reportRows();
+ const groups=makeReportGroups(selected);
+ const selectedItemMap=new Map(groups.map(g=>[Number(g.item),g]));
+ const universeMap=new Map();
+ allRows.forEach(r=>{const n=reportItemNo(r);if(!universeMap.has(n))universeMap.set(n,{item:n,label:reportItemLabel(r),rows:[]});universeMap.get(n).rows.push(r);});
+ if(reportSelectedModules.has('principal'))ITEMS.forEach(it=>{if(!universeMap.has(Number(it.item)))universeMap.set(Number(it.item),{item:Number(it.item),label:it.label,rows:[]});});
+ const universe=[...universeMap.values()].sort((a,b)=>a.item-b.item);
+ const duplicateMap=new Map();selected.forEach(r=>{const key=`${reportItemNo(r)}|${normalize(r.name)}`;if(!duplicateMap.has(key))duplicateMap.set(key,[]);duplicateMap.get(key).push(r);});
+ const duplicates=[...duplicateMap.entries()].filter(([,list])=>list.length>1).map(([key,list])=>({item:Number(key.split('|')[0]),name:list[0].name,reviewers:[...new Set(list.map(r=>r._reportModuleLabel||r.universeName||r.universe||'Revisor'))],count:list.length}));
+ const selectedEffective=selected.filter(eligible);
+ const selectedComplete=selected.filter(r=>eligible(r)&&scoresComplete(r));
+ const selectedOver70=selectedComplete.filter(r=>35+c2Total(r)>70);
+ const noV1=universe.filter(g=>!g.rows.some(r=>r.v1Decision==='CONTINUA'));
+ const noEnabled=universe.filter(g=>!g.rows.some(eligible));
+ const acefalias=universe.filter(g=>!g.rows.some(r=>eligible(r)&&scoresComplete(r)&&35+c2Total(r)>=50));
+ const noComplete=universe.filter(g=>!g.rows.some(r=>eligible(r)&&scoresComplete(r)));
+ const issues=[];
+ duplicates.forEach(d=>issues.push({item:d.item,person:d.name,issue:`Posible duplicado (${d.count} registros). Revisores: ${d.reviewers.join(', ')}.`}));
+ selected.forEach(r=>{
+  const item=reportItemNo(r),person=r.name||`ID ${r.id}`;
+  if(!r.v1Decision)issues.push({item,person,issue:'No tiene decisión preliminar V-1.'});
+  if(r.v1Decision==='CONTINUA'&&!r.v3Status)issues.push({item,person,issue:'Continúa en V-1, pero falta decisión V-3.'});
+  if(eligible(r)&&!scoresComplete(r))issues.push({item,person,issue:'Está habilitado, pero faltan componentes del puntaje C-2.'});
+  if(eligible(r)&&scoresComplete(r)&&35+c2Total(r)>70)issues.push({item,person,issue:`Puntaje final superior al máximo de 70: ${35+c2Total(r)}.`});
+ });
+ return {allRows,groups,universe,selectedItemMap,duplicates,issues,noV1,noEnabled,acefalias,noComplete,selectedEffective,selectedComplete,selectedOver70,uniqueNames:new Set(selected.map(r=>normalize(r.name)).filter(Boolean)).size};
+}
+function confirmWordReportReview(selected){
+ const d=wordReportReviewData(selected);const dialog=$('exportReviewDialog');
+ const selectedItems=[...d.selectedItemMap.values()].sort((a,b)=>a.item-b.item);
+ const cards=[
+  ['Registros incluidos en Word',selected.length],['Personas únicas',d.uniqueNames],['Revisores seleccionados',reportSelectedModules.size],['Ítems con participantes',selectedItems.length],
+  ['Continúan en V-1',selected.filter(r=>r.v1Decision==='CONTINUA').length],['Habilitados V-1 + V-3',d.selectedEffective.length],['Evaluación C-2 completa',d.selectedComplete.length],['Puntaje final > 70',d.selectedOver70.length],
+  ['Duplicados detectados',d.duplicates.length],['Ítems sin continuar en V-1',d.noV1.length],['Ítems sin habilitados V-1 + V-3',d.noEnabled.length],['Acefalías estimadas',d.acefalias.length],['Ítems sin puntaje completo',d.noComplete.length]
+ ];
+ $('exportReviewTitle').textContent='Revisión previa · Informe Word';
+ $('cancelExportReviewBtn').textContent='Volver a revisar';$('acceptExportReviewBtn').textContent='Confirmar y generar Word';
+ $('exportReviewSummary').innerHTML=`<div class="notice"><strong>Este será el contenido del Word.</strong> Se incluirán únicamente los postulantes seleccionados en el paso anterior. Los indicadores de ítems sin habilitados y acefalías se calculan sobre el universo cargado de los revisores seleccionados${reportSelectedModules.has('principal')?' y el catálogo oficial de 60 ítems':''}.</div><div class="export-summary-grid">${cards.map(([label,value])=>`<div class="export-summary-card"><span>${esc(label)}</span><strong>${value}</strong></div>`).join('')}</div><div class="export-review-section"><h3>Ítems y cargos que sí aparecerán en los cuadros (${selectedItems.length})</h3><div class="export-item-chips">${selectedItems.map(it=>`<span class="export-item-chip">Ítem ${it.item} · ${esc(it.label)}</span>`).join('')||'<span class="mini">No hay ítems seleccionados.</span>'}</div></div><div class="export-review-section"><h3>Ítems sin habilitados V-1 + V-3 (${d.noEnabled.length})</h3><div class="export-review-list">${d.noEnabled.length?`<ul>${d.noEnabled.map(it=>`<li>Ítem ${it.item} · ${esc(it.label)} — ningún registro con V-1 CONTINÚA y V-3 CUMPLE</li>`).join('')}</ul>`:'No se detectaron ítems sin habilitados.'}</div></div><div class="export-review-section"><h3>Acefalias estimadas (${d.acefalias.length})</h3><div class="export-review-list">${d.acefalias.length?`<ul>${d.acefalias.map(it=>`<li>Ítem ${it.item} · ${esc(it.label)} — ningún postulante habilitado con evaluación completa alcanza 50 puntos</li>`).join('')}</ul>`:'No se detectaron acefalías en el universo revisado.'}</div></div>`;
+ $('exportReviewIssues').innerHTML=`<div class="export-review-section"><h3>Inconsistencias y duplicados (${d.issues.length})</h3>${d.issues.length?`<div class="export-review-list">${d.issues.map(x=>`<div class="issue"><strong>Ítem ${esc(x.item)}</strong> · ${esc(x.person)}<br>${esc(x.issue)}</div>`).join('')}</div>`:'<div class="clean">No se detectaron inconsistencias automáticas en los postulantes seleccionados.</div>'}</div>`;
+ const restore=()=>{$('cancelExportReviewBtn').textContent='Cancelar descarga';$('acceptExportReviewBtn').textContent='Confirmar y descargar';};
+ if(!dialog||typeof dialog.showModal!=='function'){restore();return Promise.resolve(confirm(`Revisión previa del informe Word\nRegistros: ${selected.length}\nPersonas únicas: ${d.uniqueNames}\nÍtems: ${selectedItems.length}\nHabilitados: ${d.selectedEffective.length}\nDuplicados: ${d.duplicates.length}\nAcefalías estimadas: ${d.acefalias.length}\nInconsistencias: ${d.issues.length}\n\n¿Generar Word?`));}
+ dialog.returnValue='cancel';dialog.showModal();return new Promise(resolve=>{const done=()=>{dialog.removeEventListener('close',done);restore();resolve(dialog.returnValue==='accept');};dialog.addEventListener('close',done);});
+}
 async function generateWordReport(){
  const btn=$('generateReportBtn');btn.disabled=true;btn.textContent='Generando Word…';
  try{
   await loadReportSelectionData();
   const selected=reportRows().filter(r=>reportSelectedIds.has(String(r._reportKey))).sort((a,b)=>reportItemNo(a)-reportItemNo(b)||(Number(a.num)||0)-(Number(b.num)||0)||String(a.name).localeCompare(String(b.name),'es'));
   if(!selected.length)throw new Error('Selecciona por lo menos un postulante de los revisores incluidos.');
-  const duplicateGroups=new Map();selected.forEach(r=>{const key=`${reportItemNo(r)}|${normalize(r.name)}`;if(!duplicateGroups.has(key))duplicateGroups.set(key,[]);duplicateGroups.get(key).push(r);});
-  const duplicates=[...duplicateGroups.values()].filter(group=>group.length>1);
-  if(duplicates.length&&!confirm(`Se detectaron ${duplicates.length} postulante(s) repetido(s) en el mismo ítem entre distintos revisores. Se conservarán como registros separados para no elegir automáticamente una evaluación sobre otra. ¿Deseas continuar con el informe?`))return;
+  const reviewConfirmed=await confirmWordReportReview(selected);if(!reviewConfirmed){setSaveState('Generación de Word cancelada desde la revisión previa','warn');return;}
   if(!window.JSZip)throw new Error('No se pudo cargar el componente de documentos Word. Comprueba la conexión a internet y vuelve a intentarlo.');
   const bytes=await getReportTemplateBytes();const zip=await JSZip.loadAsync(bytes);const docFile=zip.file('word/document.xml');if(!docFile)throw new Error('El archivo seleccionado no parece ser un documento Word .docx válido.');
   const xml=await docFile.async('string');const xmlDoc=new DOMParser().parseFromString(xml,'application/xml');if(xmlDoc.getElementsByTagName('parsererror').length)throw new Error('No se pudo interpretar el XML interno del modelo Word.');
