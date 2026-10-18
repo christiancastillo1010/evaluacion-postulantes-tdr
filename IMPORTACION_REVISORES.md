@@ -2,8 +2,8 @@
 
 ## Reglas aplicadas
 
-- El universo global tiene 60 ítems: 1–15 supervisores de campo y 16–60 encuestadores.
-- Los encuestadores en los Excel fuente llevan numeración local; el sistema los ubica en el universo global sumando 15 al ordinal local.
+- La numeración visible es independiente por tipo: supervisores 1–15 y encuestadores 1–45. Los identificadores internos se mantienen para conservar compatibilidad con los registros ya guardados.
+- Los encuestadores se numeran visiblemente del 1 al 45, de forma independiente de los supervisores (1–15). Internamente se conservan los identificadores históricos para no alterar evaluaciones existentes.
 - Se usa Formulario 1 como base de postulantes, Formulario 3 para los componentes C-2 y Formulario 4 para cotejar los totales.
 - No se reconstruyen los componentes de C-2 a partir de un total aislado.
 - Los bloques duplicados exactos no se duplican en el sistema.
@@ -29,6 +29,6 @@
 ## Ajuste solicitado antes del despliegue
 
 - Se deja vacío el bloque fuente de Jaqueline etiquetado como ítem 6 (Formulario 1, filas 47–70), porque repite exactamente los 13 nombres del bloque anterior.
-- Se conserva una sola vez el bloque canónico de ENCUESTADOR LA PAZ VI, asignado al ítem oficial global 21 conforme al universo La Paz (encuestadores locales 1–45 se mapean a los ítems globales 16–60).
-- No se cargan esos registros en el ítem global 6. No se borran ni modifican registros del módulo principal u otros revisores.
+- Se conserva una sola vez el bloque canónico de ENCUESTADOR LA PAZ VI, asignado al ítem visible 6 de encuestador conforme al universo La Paz (encuestadores se vinculan por el nombre del cargo para conservar datos existentes).
+- No se cargan esos registros en el ítem 6 de supervisor. No se borran ni modifican registros del módulo principal u otros revisores.
 - El informe Word predeterminado es `INFORME_MODELO_LA_PAZ.docx`, tomado del modelo final proporcionado. Se conserva el color celeste y la estructura de la plantilla; los cuadros de evaluación se reemplazan por los datos seleccionados.

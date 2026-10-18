@@ -41,7 +41,7 @@
     }
   },
   "universe": "La Paz",
-  "item_mapping": "Supervisor 1-15; Encuestador 16-60 with local surveyor ordinal +15",
+  "item_mapping": "Visible numbering is independent by type: supervisors 1-15; surveyors 1-45. Legacy internal identifiers are retained for surveyors to preserve saved records.",
   "duplicate_resolution": {
     "module": "jaqueline",
     "source": "JAQUELINE EVALUACIÓN.xlsx · Formulario 1",
@@ -49,6 +49,6 @@
     "reason": "Es una repetición exacta de los 13 nombres del bloque anterior y ambos encabezados indican ENCUESTADOR LA PAZ VI.",
     "kept_canonical_records": 13,
     "official_item_for_kept_records": 21,
-    "item_6_global": "No se cargan registros de Jaqueline en el ítem global 6; no se modifican los datos del módulo principal ni de otros revisores."
+    "item_6_global": "No se cargan registros de Jaqueline en el ítem 6 de supervisor; no se modifican los datos del módulo principal ni de otros revisores."
   }
 }

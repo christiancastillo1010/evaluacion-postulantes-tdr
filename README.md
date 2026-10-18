@@ -6,7 +6,7 @@
 - `INFORME_MODELO_LA_PAZ.docx`: modelo Word proporcionado por el usuario. Se conserva el color celeste; los cuadros se regeneran según los postulantes seleccionados.
 - `ANEXOS.xlsx`: plantilla oficial de exportación Excel.
 - `MODELO_IMPORTAR_UNIVERSO.xlsx`: plantilla para importar nuevos universos.
-- `UNIVERSO_ITEMS_LA_PAZ_60_CORREGIDO.xlsx`: referencia del universo oficial de 60 ítems.
+- `UNIVERSO_ITEMS_LA_PAZ_45.xlsx`: referencia del universo oficial de numeración por tipo de cargo: supervisores 1–15 y encuestadores 1–45.
 - `REVISORES_MANIFEST.json` e `IMPORTACION_REVISORES.md`: conteos y observaciones de importación.
 - `.nojekyll`: archivo de Pages.
 
@@ -34,12 +34,12 @@ La ventana permite cancelar la descarga para corregir los datos antes de generar
 Incluye los módulos JAQUELINE (204 registros únicos) y XIMENA (206 registros únicos), en la misma base D1 y aislados por módulo.
 
 ## Duplicado de Jaqueline: ítem fuente 6
-El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47–70 del Excel fuente) está excluido porque repite exactamente los 13 nombres del bloque anterior y ambos indican ENCUESTADOR LA PAZ VI. Se conserva una sola copia de esos 13 postulantes bajo el ítem oficial global 21, que es el ítem correspondiente a Encuestador VI. No se cargan esos datos en el ítem global 6 y no se borran ni alteran datos del módulo principal ni de otros revisores.
+El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47–70 del Excel fuente) está excluido porque repite exactamente los 13 nombres del bloque anterior y ambos indican ENCUESTADOR LA PAZ VI. Se conserva una sola copia de esos 13 postulantes bajo el ítem visible 6 de encuestador (identificador interno del registro de Encuestador VI), que es el ítem correspondiente a Encuestador VI. No se cargan esos datos en el ítem 6 de supervisor y no se borran ni alteran datos del módulo principal ni de otros revisores.
 
 ## Universo oficial
-- Ítems globales 1–15: Supervisores de Campo La Paz I–XV.
-- Ítems globales 16–60: Encuestadores La Paz I–XLV.
-- Los números locales de encuestadores se convierten al correlativo global sumando 15.
+- Ítems visibles de supervisores 1–15: Supervisores de Campo La Paz I–XV.
+- Ítems visibles de encuestadores: 1–45 (numeración independiente de supervisores).
+- La numeración que se muestra en pantalla, informes y plantillas es independiente por tipo de cargo; el sistema conserva internamente la asociación de cada cargo para no alterar los registros guardados.
 
 ## Subida a GitHub / Cloudflare Pages
 1. Descomprime el ZIP.
@@ -51,11 +51,11 @@ El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47�
 No se ha desplegado directamente en la cuenta Cloudflare; debe completarse el commit y verificarse el sitio publicado.
 
 
-## Versión LP-1.4.0 (18/10/2026)
+## Versión LP-1.5.0 (18/10/2026)
 - Identificador de versión visible en la cabecera y en la revisión previa del informe Word.
 - Resumen previo por ítem: proponentes incluidos, habilitados, posibles adjudicados con puntaje final superior a 50 y personas empatadas en la nota máxima. Los ítems sin proponentes incluidos se resaltan en rojo.
 - La tabla de recomendaciones genera una sola fila por ítem y propone únicamente al postulante con la nota máxima superior a 50. Si no hay proponentes incluidos, nadie supera 50 o existe empate en la nota máxima, la fila queda resaltada en amarillo para revisión manual.
 - Se mantiene la base D1 y el binding `DB` existentes.
 
 
-Actualización LP-1.4.0: pop-up previo ampliado para mostrar el universo sin desplazamiento interno en escritorio, conteo de evaluados, habilitados y posibles adjudicados por ítem; acefalías identificadas con el universo completo de los revisores incluidos cuando no hay habilitados o no existe posible adjudicado con puntaje superior a 50; plantilla Word corregida para reemplazar todas las referencias a Santa Cruz por La Paz.
+Actualización LP-1.5.0: pop-up previo ampliado para mostrar el universo sin desplazamiento interno en escritorio, conteo de evaluados, habilitados y posibles adjudicados por ítem; acefalías identificadas con el universo completo de los revisores incluidos cuando no hay habilitados o no existe posible adjudicado con puntaje superior a 50; plantilla Word corregida para reemplazar todas las referencias a Santa Cruz por La Paz.
