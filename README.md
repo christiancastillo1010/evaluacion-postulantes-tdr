@@ -51,8 +51,11 @@ El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47�
 No se ha desplegado directamente en la cuenta Cloudflare; debe completarse el commit y verificarse el sitio publicado.
 
 
-## Versión LP-1.3.0 (18/10/2026)
+## Versión LP-1.4.0 (18/10/2026)
 - Identificador de versión visible en la cabecera y en la revisión previa del informe Word.
 - Resumen previo por ítem: proponentes incluidos, habilitados, posibles adjudicados con puntaje final superior a 50 y personas empatadas en la nota máxima. Los ítems sin proponentes incluidos se resaltan en rojo.
 - La tabla de recomendaciones genera una sola fila por ítem y propone únicamente al postulante con la nota máxima superior a 50. Si no hay proponentes incluidos, nadie supera 50 o existe empate en la nota máxima, la fila queda resaltada en amarillo para revisión manual.
 - Se mantiene la base D1 y el binding `DB` existentes.
+
+
+Actualización LP-1.4.0: pop-up previo ampliado para mostrar el universo sin desplazamiento interno en escritorio, conteo de evaluados, habilitados y posibles adjudicados por ítem; acefalías identificadas con el universo completo de los revisores incluidos cuando no hay habilitados o no existe posible adjudicado con puntaje superior a 50; plantilla Word corregida para reemplazar todas las referencias a Santa Cruz por La Paz.
