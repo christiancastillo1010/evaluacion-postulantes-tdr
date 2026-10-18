@@ -5,8 +5,8 @@ const EDITABLE_FIELDS = [
   "education", "general", "specific", "notes"
 ];
 const EDITABLE_SET = new Set(EDITABLE_FIELDS);
-const MODULE_KEYS = new Set(["principal", "evaluador1", "evaluador2", "evaluador3", "evaluador4", "evaluador5", "evaluador6"]);
-const DEFAULT_MODULE_NAMES = {principal:'Módulo principal',evaluador1:'Evaluador 1',evaluador2:'Evaluador 2',evaluador3:'Evaluador 3',evaluador4:'Evaluador 4',evaluador5:'Evaluador 5',evaluador6:'Evaluador 6'};
+const MODULE_KEYS = new Set(["principal", "evaluador1", "evaluador2", "evaluador3", "evaluador4", "evaluador5", "evaluador6", "jaqueline", "ximena"]);
+const DEFAULT_MODULE_NAMES = {principal:'Módulo principal',evaluador1:'Evaluador 1',evaluador2:'Evaluador 2',evaluador3:'Evaluador 3',evaluador4:'Evaluador 4',evaluador5:'Evaluador 5',evaluador6:'Evaluador 6',jaqueline:'JAQUELINE',ximena:'XIMENA'};
 function normalizeName(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();}
 
 function json(data, status = 200) {
@@ -41,7 +41,7 @@ async function ensureTable(db) {
   await db.prepare("UPDATE records SET universe='principal' WHERE universe IS NULL OR universe='' ").run();
   await db.prepare("UPDATE records SET universeName='Universo principal' WHERE universe='principal' AND (universeName IS NULL OR universeName='')").run();
 
-  // Una sola base D1 para los seis evaluadores. La clave compuesta aísla los ID repetidos entre módulos.
+  // Una sola base D1 para todos los módulos de evaluación. La clave compuesta aísla los ID repetidos entre módulos.
   await db.prepare(`CREATE TABLE IF NOT EXISTS module_records (
     module_key TEXT NOT NULL, id INTEGER NOT NULL, num INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '', role TEXT NOT NULL DEFAULT '', c1 TEXT DEFAULT '',

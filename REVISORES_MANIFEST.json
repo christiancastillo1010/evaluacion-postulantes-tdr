@@ -1,0 +1,54 @@
+{
+  "modules": {
+    "jaqueline": {
+      "records": 204,
+      "items": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "score_records": 21
+    },
+    "ximena": {
+      "records": 206,
+      "items": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "score_records": 21
+    }
+  },
+  "universe": "La Paz",
+  "item_mapping": "Supervisor 1-15; Encuestador 16-60 with local surveyor ordinal +15",
+  "duplicate_resolution": {
+    "module": "jaqueline",
+    "source": "JAQUELINE EVALUACIÓN.xlsx · Formulario 1",
+    "omitted_duplicate_block": "Segundo bloque etiquetado con número de ítem 6, filas 47–70 (encabezado y lista).",
+    "reason": "Es una repetición exacta de los 13 nombres del bloque anterior y ambos encabezados indican ENCUESTADOR LA PAZ VI.",
+    "kept_canonical_records": 13,
+    "official_item_for_kept_records": 21,
+    "item_6_global": "No se cargan registros de Jaqueline en el ítem global 6; no se modifican los datos del módulo principal ni de otros revisores."
+  }
+}
