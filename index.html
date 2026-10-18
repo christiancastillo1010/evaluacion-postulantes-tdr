@@ -40,7 +40,7 @@
 </head>
 <body>
 <header class="hero" id="top">
-  <div class="kicker">Sistema de evaluación · La Paz · Versión LP-1.6.0 · 18/10/2026</div>
+  <div class="kicker">Sistema de evaluación · La Paz · Versión LP-1.7.0 · 18/10/2026</div>
   <h1>Evaluación de postulantes</h1>
   <p class="cuce"><strong>CUCE:</strong> 26-0206-00-1690417-1-2</p>
   <p><strong>Objeto:</strong> CONTRATACIÓN DE CONSULTOR INDIVIDUAL DE LÍNEA AUXILIAR 1 - SUPERVISOR DE CAMPO LA PAZ QUINCE (15) VACANCIAS Y AUXILIAR 2 -ENCUESTADOR LA PAZ CUARENTA Y CINCO (45) VACANCIAS</p>
@@ -86,11 +86,12 @@
         <button class="soft smallbtn" id="importBtn">Importar respaldo</button>
         <input type="file" id="importFile" accept="application/json,.json" class="hide">
         <button class="danger smallbtn" id="resetBtn">Restablecer evaluaciones</button>
-        <button class="primary" id="exportOfficialBtn" title="Descargar los cuatro formularios para todos los ítems del universo activo">Exportar global · todos los ítems</button>
+        <button class="primary" id="exportOfficialBtn" title="Descargar los cuatro formularios de todos los ítems y universos del evaluador actual">Exportar global · todos los ítems</button>
+        <button class="primary" id="exportAllReviewersBtn" title="Descargar los cuatro formularios de todos los ítems, universos y revisores">Exportación global · todos los revisores</button>
         <button class="primary" id="exportReportBtn" title="Generar informe Word a partir del modelo y de los postulantes seleccionados">Generar informe Word</button>
       </div>
     </div>
-    <div class="notice"><strong>Exportación oficial:</strong> se utiliza el archivo ANEXOS.xlsx como plantilla para conservar el formato, encabezados, celdas combinadas y distribución. Puedes exportar cada formulario por separado o descargar el libro global. La exportación incluye solo los ítems con postulantes del módulo y universo activos; cada evaluador descarga sus propios datos. El informe Word provisional utiliza el modelo Santa Cruz y permite seleccionar uno o varios revisores y postulantes.</div>
+    <div class="notice"><strong>Exportación oficial:</strong> se utiliza el archivo ANEXOS.xlsx como plantilla para conservar el formato, encabezados, celdas combinadas y distribución. Puedes exportar cada formulario por separado o descargar el libro global. La exportación por evaluador incluye todos sus ítems y universos. El botón “Exportación global · todos los revisores” reúne los registros de todos los módulos y universos en un solo libro, con pestañas identificadas por formulario y revisor. El informe Word provisional utiliza el modelo Santa Cruz y permite seleccionar uno o varios revisores y postulantes.</div>
     <div class="stats">
       <div class="stat"><strong id="statTotal">215</strong><span>Postulantes</span></div>
       <div class="stat"><strong id="statContinue">0</strong><span>Continúa · V-1</span></div>
@@ -202,7 +203,7 @@
   <div class="modal-foot"><button class="soft" id="cancelExportReviewBtn" type="button" value="cancel">Cancelar descarga</button><button class="primary" id="acceptExportReviewBtn" type="button" value="accept">Confirmar y descargar</button></div>
 </dialog>
 <dialog class="modal" id="reportDialog" aria-labelledby="reportTitle">
-  <div class="modal-head"><div><h2 id="reportTitle">Generar informe Word</h2><p>Versión LP-1.6.0 · Numeración independiente por tipo de cargo: supervisores 1–15 y encuestadores 1–45. Antes de descargar se mostrará el resumen por ítem.</p></div><button class="soft smallbtn" id="closeReportTop" type="button">Cerrar</button></div>
+  <div class="modal-head"><div><h2 id="reportTitle">Generar informe Word</h2><p>Versión LP-1.7.0 · Numeración independiente por tipo de cargo: supervisores 1–15 y encuestadores 1–45. Antes de descargar se mostrará el resumen por ítem.</p></div><button class="soft smallbtn" id="closeReportTop" type="button">Cerrar</button></div>
   <div class="modal-body">
     <div class="notice"><strong>Modelo provisional:</strong> se conserva el diseño y los colores celestes del modelo de La Paz. Los cuadros se insertan por ítem y el modelo podrá sustituirse más adelante sin cambiar los datos de evaluación. La numeración visible es independiente por tipo: supervisores 1–15 y encuestadores 1–45. El identificador interno se conserva para no alterar los datos guardados.</div>
     <div class="report-reviewer-block"><strong>Revisores que aportarán datos al informe</strong><div id="reportReviewerList" class="report-reviewer-list"></div><p class="mini">Puedes combinar revisores. Si el mismo postulante aparece en más de un revisor para el mismo ítem, el sistema te avisará antes de generar el Word.</p></div>
@@ -315,7 +316,7 @@ function renderCauseOptions(list,selected){const q=normalize($('causeSearch').va
 function selectedCauseId(){const el=$('causeOptions').querySelector('input[name="causeChoice"]:checked');return el?el.value:(activeCause.selected||'');}
 function updateOtherVisibility(){const show=selectedCauseId()==='OTROS';$('otherWrap').classList.toggle('hide',!show);document.querySelectorAll('.cause-option').forEach(l=>{const i=l.querySelector('input');l.classList.toggle('selected',!!i&&i.checked);});}
 async function saveCauseSelection(){const id=selectedCauseId();if(!id){alert('Selecciona una causal del catálogo.');return;}const other=$('causeOtherText').value.trim();if(id==='OTROS'&&!other){$('otherWrap').classList.remove('hide');$('causeOtherText').focus();alert('Para seleccionar OTROS, la justificación es obligatoria.');return;}const r=records.find(x=>x.id===Number(activeCause.id));if(!r)return;pushHistory();if(activeCause.type==='v1'){r.v1Cause=id;r.v1Other=id==='OTROS'?other:'';}else{r.v3Cause=id;r.v3Other=id==='OTROS'?other:'';}queueSave();$('causeDialog').close();renderAll();if(id==='OTROS'&&cloudConnected){try{await flushCloudChanges();await apiRequest('/api/records',{method:'POST',body:JSON.stringify({action:'addOtherCause',type:activeCause.type,description:other})});await refreshSharedMetadata();}catch(error){console.warn('La causal quedó guardada en el registro, pero no se pudo actualizar la lista compartida:',error);setSaveState('Causal guardada en el registro; falta sincronizar catálogo compartido','warn');}}}
-function validateBeforeExport(){const missing=records.filter(r=>(r.v1Decision==='DESCALIFICADO'&&!r.v1Cause)||(r.v1Decision==='DESCALIFICADO'&&r.v1Cause==='OTROS'&&!String(r.v1Other||'').trim())||(r.v1Decision!=='DESCALIFICADO'&&r.v3Status==='NO_CUMPLE'&&!r.v3Cause)||(r.v1Decision!=='DESCALIFICADO'&&r.v3Status==='NO_CUMPLE'&&r.v3Cause==='OTROS'&&!String(r.v3Other||'').trim()));if(missing.length){return confirm(`Hay ${missing.length} registro(s) con decisión de descalificación sin causal completa. Puedes volver a Formulario 1 para completarlos. ¿Quieres generar el Excel de revisión de todas formas?`);}return true;}
+function validateBeforeExport(sourceRows=records){const missing=sourceRows.filter(r=>(r.v1Decision==='DESCALIFICADO'&&!r.v1Cause)||(r.v1Decision==='DESCALIFICADO'&&r.v1Cause==='OTROS'&&!String(r.v1Other||'').trim())||(r.v1Decision!=='DESCALIFICADO'&&r.v3Status==='NO_CUMPLE'&&!r.v3Cause)||(r.v1Decision!=='DESCALIFICADO'&&r.v3Status==='NO_CUMPLE'&&r.v3Cause==='OTROS'&&!String(r.v3Other||'').trim()));if(missing.length){return confirm(`Hay ${missing.length} registro(s) con decisión de descalificación sin causal completa. Puedes volver a Formulario 1 para completarlos. ¿Quieres generar el Excel de revisión de todas formas?`);}return true;}
 function normalizeWorkbookText(s){return String(s??'').trim();}
 function deepClone(s){return s==null?s:JSON.parse(JSON.stringify(s));}
 function cloneWorksheet(wb,source,name){const ws=wb.addWorksheet(name);ws.properties=deepClone(source.properties||{});ws.pageSetup=deepClone(source.pageSetup||{});ws.views=deepClone(source.views||[]);ws.headerFooter=deepClone(source.headerFooter||{});ws.state=source.state;const maxCol=Math.max(source.columnCount||0,17);for(let c=1;c<=maxCol;c++){const sc=source.getColumn(c),dc=ws.getColumn(c);dc.width=sc.width;dc.hidden=sc.hidden;dc.outlineLevel=sc.outlineLevel;dc.style=deepClone(sc.style||{});if(sc.numFmt)dc.numFmt=sc.numFmt;}const maxRow=source.rowCount||1;for(let r=1;r<=maxRow;r++){const sr=source.getRow(r),dr=ws.getRow(r);dr.height=sr.height;dr.hidden=sr.hidden;dr.outlineLevel=sr.outlineLevel;for(let c=1;c<=maxCol;c++){const sc=sr.getCell(c),dc=dr.getCell(c);dc.value=deepClone(sc.value);dc.style=deepClone(sc.style||{});if(sc.numFmt)dc.numFmt=sc.numFmt;if(sc.protection)dc.protection=deepClone(sc.protection);}}const merges=Array.isArray(source.model?.merges)?source.model.merges:Object.keys(source._merges||{});for(const m of merges){try{ws.mergeCells(typeof m==='string'?m:m.range);}catch(e){}}if(source.autoFilter)ws.autoFilter=deepClone(source.autoFilter);return ws;}
@@ -334,10 +335,10 @@ function worksheetExportBounds(ws){
  const area=String(ws.pageSetup?.printArea||'').split(',')[0].replace(/\$/g,'');
  const m=area.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/i);
  if(m)return {r1:Number(m[2]),c1:excelColumnNumber(m[1]),r2:Number(m[4]),c2:excelColumnNumber(m[3])};
- if(/^F?ORM.?1|^F1-ITEM|^FORM1-I/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(7,ws.rowCount),c2:17};
- if(/^F?ORM.?2|^F2-ITEM|^FORM2-I/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(4,ws.rowCount),c2:2};
- if(/^F?ORM.?3|^F3-ITEM|^FORM3-I/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(4,ws.rowCount),c2:8};
- if(/^F?ORM.?4|^F4-ITEM|^FORM4-I/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(5,ws.rowCount),c2:4};
+ if(/^F?ORM.?1|^F1-/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(7,ws.rowCount),c2:17};
+ if(/^F?ORM.?2|^F2-/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(4,ws.rowCount),c2:2};
+ if(/^F?ORM.?3|^F3-/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(4,ws.rowCount),c2:8};
+ if(/^F?ORM.?4|^F4-/i.test(ws.name))return {r1:1,c1:1,r2:Math.max(5,ws.rowCount),c2:4};
  return {r1:1,c1:1,r2:ws.rowCount,c2:ws.columnCount};
 }
 function worksheetMergedRanges(ws){
@@ -365,7 +366,7 @@ function applyCompleteExportBorders(ws){
   }
  }
  // En FORM 2, el encabezado debe quedar centrado tanto horizontal como verticalmente.
- if(/^(FORM 2|F2-ITEM|FORM2-I)/i.test(ws.name)){
+ if(/^(FORM 2|F2-)/i.test(ws.name)){
   const heading=ws.getCell('A4');
   heading.alignment={...(heading.alignment||{}),horizontal:'center',vertical:'center',wrapText:true};
   heading.font={...(heading.font||{}),name:'Century Gothic',size:8,color:{argb:'FF000000'}};
@@ -382,22 +383,22 @@ function applyOfficialWorkbookStyles(wb){
    }
   }
   const forceBlack=(fromRow,toRow,fromCol,toCol)=>{for(let r=fromRow;r<=toRow;r++)for(let c=fromCol;c<=toCol;c++){const cell=ws.getCell(r,c);cell.font={...(cell.font||{}),name:'Century Gothic',size:8,color:{argb:'FF000000'}};}};
-  if(/^(FORM 1|F1-ITEM|FORM1-I)/i.test(ws.name)){
+  if(/^(FORM 1|F1-)/i.test(ws.name)){
    ws.getColumn('A').width=6;ws.getColumn('B').width=29;ws.getColumn('M').width=25;ws.getColumn('P').width=25;
    forceBlack(7,ws.rowCount,1,17);
    for(let r=7;r<=ws.rowCount;r+=2){if(ws.getRow(r+1)){ws.getRow(r).height=Math.max(ws.getRow(r).height||18,20);ws.getRow(r+1).height=Math.max(ws.getRow(r+1).height||35,35);}}
-  }else if(/^(FORM 2|F2-ITEM|FORM2-I)/i.test(ws.name)){
+  }else if(/^(FORM 2|F2-)/i.test(ws.name)){
    ws.getColumn('A').width=29;ws.getColumn('B').width=54;
    ws.getColumn('A').alignment={horizontal:'center',vertical:'center',wrapText:true};
    ws.getColumn('B').alignment={horizontal:'left',vertical:'top',wrapText:true};
    forceBlack(4,ws.rowCount,1,2);
    const heading=ws.getCell('A4');
    heading.alignment={...(heading.alignment||{}),horizontal:'center',vertical:'center',wrapText:true};
-  }else if(/^(FORM 3|F3-ITEM|FORM3-I)/i.test(ws.name)){
+  }else if(/^(FORM 3|F3-)/i.test(ws.name)){
    ws.getColumn('A').width=6;ws.getColumn('B').width=34;ws.getColumn('C').width=13;ws.getColumn('D').width=13;ws.getColumn('E').width=13;ws.getColumn('F').width=20;ws.getColumn('G').width=24;ws.getColumn('H').width=10;
    forceBlack(4,ws.rowCount,1,8);ws.getRow(3).height=Math.max(ws.getRow(3).height||0,100);
    for(let r=4;r<=ws.rowCount;r++)ws.getRow(r).height=18;
-  }else if(/^(FORM 4|F4-ITEM|FORM4-I)/i.test(ws.name)){
+  }else if(/^(FORM 4|F4-)/i.test(ws.name)){
    ws.getColumn('A').width=42;ws.getColumn('B').width=16;ws.getColumn('C').width=16;ws.getColumn('D').width=16;
    forceBlack(4,ws.rowCount,1,4);
    for(let r=5;r<=ws.rowCount;r++)ws.getRow(r).height=18;
@@ -536,39 +537,49 @@ async function importUniverseFile(file){try{if(!cloudConnected)throw new Error('
 function downloadBlob(blob,filename){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
 function getExportItems(rows=records){
  const groups=new Map();
- const mainCatalog=activeModule==='principal'&&currentUniverse==='principal';
  for(const r of rows){
   if(Number(r.deleted)===1)continue;
-  const role=String(r.role||'').trim();
-  if(!role)continue;
-  const catalog=mainCatalog?ITEMS.find(x=>x.role===role||((Number(r.itemNo)||0)>0&&Number(x.item)===Number(r.itemNo))):null;
-  const key=catalog?catalog.role:role;
+  const role=String(r.role||'').trim();if(!role)continue;
+  const universe=String(r.universe||'principal');
+  const isMainPrincipal=activeModule==='principal'&&universe==='principal';
+  const catalog=isMainPrincipal?ITEMS.find(x=>x.role===role||((Number(r.itemNo)||0)>0&&Number(x.item)===Number(r.itemNo)&&normalize(x.label)===normalize(r.itemLabel||r.role))):null;
+  const keyRole=catalog?catalog.role:role;
   const itemNo=Number(catalog?.item??r.itemNo??0);
   const label=String(catalog?.label||r.itemLabel||role).trim();
   if(!Number.isFinite(itemNo)||itemNo<1||!label)continue;
-  if(!groups.has(key))groups.set(key,{item:itemNo,role:key,label,count:0,type:/ENCUESTADOR/i.test(label)?'ENCUESTADOR':'SUPERVISOR'});
+  const key=[universe,keyRole,itemNo,normalize(label)].join('|');
+  if(!groups.has(key))groups.set(key,{item:itemNo,role:keyRole,label,count:0,type:/ENCUESTADOR/i.test(label)?'ENCUESTADOR':'SUPERVISOR',universe,universeName:String(r.universeName||universe)});
   groups.get(key).count++;
  }
- return [...groups.values()].sort((a,b)=>a.item-b.item||a.label.localeCompare(b.label,'es'));
+ return [...groups.values()].sort((a,b)=>String(a.universeName).localeCompare(String(b.universeName),'es')||a.item-b.item||a.label.localeCompare(b.label,'es'));
 }
 function recordsForExportItem(rows,it){
  return rows.filter(r=>{
+  if(Number(r.deleted)===1)return false;
+  if(it.universe!==undefined&&String(r.universe||'principal')!==String(it.universe))return false;
   if(String(r.role||'')===String(it.role))return true;
   return Number(r.itemNo)===Number(it.item)&&normalize(r.itemLabel||r.role)===normalize(it.label);
  });
 }
+function uniqueWorksheetName(wb,desired){
+ let base=String(desired||'Hoja').replace(/[\\/:?*\[\]]/g,'-').replace(/^'+|'+$/g,'').trim()||'Hoja';
+ base=base.slice(0,31);let name=base;let n=2;
+ while(wb.getWorksheet(name)){const suffix=`-${n++}`;name=base.slice(0,31-suffix.length)+suffix;}
+ return name;
+}
+function sheetToken(value,max=5){return safeFileName(String(value||'')).replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,max)||'MOD';}
+function exportSheetName(formKey,it,index,moduleKey=''){
+ const type=/ENCUESTADOR/i.test(String(it.label||''))?'E':'S';
+ const localNo=String(displayItemNo(it)).padStart(2,'0');
+ const mod=moduleKey?`${sheetToken(reportModuleLabelFor(moduleKey),5)}-`:'';
+ return `${formKey.toUpperCase()}-${mod}${type}${localNo}-G${String(index+1).padStart(3,'0')}`.slice(0,31);
+}
 async function prepareExportSnapshot(){
  clearTimeout(saveTimer);
- if(cloudConnected){
-  const saved=await flushCloudChanges();
-  if(!saved)throw new Error('No se pudo confirmar el autoguardado en Cloudflare. No se generó el Excel para evitar exportar datos incompletos.');
- }
- let rows=records.filter(r=>Number(r.deleted)!==1&&(!currentUniverse||String(r.universe||'principal')===String(currentUniverse)));
- if(!rows.length&&cloudConnected){
-  await loadCloudRecords();
-  rows=records.filter(r=>Number(r.deleted)!==1&&(!currentUniverse||String(r.universe||'principal')===String(currentUniverse)));
- }
- if(!rows.length)throw new Error(`El módulo ${moduleLabel()} no tiene postulantes en el universo activo. Selecciona el universo correcto o importa/agrega personas antes de exportar.`);
+ if(cloudConnected){const saved=await flushCloudChanges();if(!saved)throw new Error('No se pudo confirmar el autoguardado en Cloudflare. No se generó el Excel para evitar exportar datos incompletos.');}
+ let rows=allRecords.filter(r=>Number(r.deleted)!==1);
+ if(!rows.length&&cloudConnected){await loadCloudRecords();rows=allRecords.filter(r=>Number(r.deleted)!==1);}
+ if(!rows.length)throw new Error(`El módulo ${moduleLabel()} no tiene postulantes cargados. Importa o agrega personas antes de exportar.`);
  const items=getExportItems(rows);
  if(!items.length)throw new Error('No se pudo relacionar ningún postulante con un ítem válido. Verifica el número de ítem y el cargo de los registros.');
  const matched=items.reduce((sum,it)=>sum+recordsForExportItem(rows,it).length,0);
@@ -577,7 +588,7 @@ async function prepareExportSnapshot(){
 }
 function exportReviewData(rows,items){
  const issues=[];const itemLabel=n=>items.find(x=>Number(x.item)===Number(n))?.label||ITEMS.find(x=>Number(x.item)===Number(n))?.label||'Ítem no identificado';
- const grouped=new Map();rows.forEach(r=>{const n=Number(r.itemNo)||Number(itemForRole(r.role).item)||reportItemFromCargo(r.itemLabel||r.role);const key=`${n||'?' }|${normalize(r.name)}`;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(r);});
+ const grouped=new Map();rows.forEach(r=>{const n=Number(r.itemNo)||Number(itemForRole(r.role).item)||reportItemFromCargo(r.itemLabel||r.role);const key=`${String(r.universe||'principal')}|${n||'?' }|${normalize(r.name)}`;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(r);});
  grouped.forEach(list=>{if(list.length>1){const r=list[0],n=Number(r.itemNo)||Number(itemForRole(r.role).item)||reportItemFromCargo(r.itemLabel||r.role)||'?';issues.push({item:n,person:r.name||`ID ${r.id}`,issue:`Nombre duplicado en el mismo ítem (${list.length} registros).`});}});
  const matchedRows=new Set();items.forEach(it=>recordsForExportItem(rows,it).forEach(r=>matchedRows.add(r)));
  rows.forEach(r=>{const n=Number(r.itemNo)||Number(itemForRole(r.role).item)||reportItemFromCargo(r.itemLabel||r.role);const item=n||'?';const person=String(r.name||`ID ${r.id}`);
@@ -615,51 +626,97 @@ Inconsistencias: ${data.issues.length}
 }
 async function exportOfficialWorkbook(){
  const btn=$('exportOfficialBtn');
- if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Preparando Excel global…';}
- setSaveState('Verificando datos del módulo activo…','warn');
+ if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Preparando Excel del evaluador…';}
+ setSaveState('Verificando todos los universos del evaluador…','warn');
  try{
   if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica la conexión a internet y vuelve a intentarlo.');
   const {rows:exportRows,items:activeForExport,matched}=await prepareExportSnapshot();
-  if(!validateBeforeExport())return;
-  const confirmed=await confirmExportReview(exportRows,activeForExport,'Excel global');if(!confirmed){setSaveState('Exportación cancelada por el usuario','warn');return;}
+  if(!validateBeforeExport(exportRows))return;
+  const confirmed=await confirmExportReview(exportRows,activeForExport,'Excel global del evaluador');if(!confirmed){setSaveState('Exportación cancelada por el usuario','warn');return;}
   const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
   const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);
   const sources={f1:wb.getWorksheet('FORM 1'),f2:wb.getWorksheet('FORM 2'),f3:wb.getWorksheet('FORM 3'),f4:wb.getWorksheet('FORM 4')};
   for(const [key,ws] of Object.entries(sources))if(!ws)throw new Error(`No se encontró la plantilla oficial del ${key.toUpperCase()} dentro de ANEXOS.xlsx.`);
-  const targets={};
-  for(let idx=0;idx<activeForExport.length;idx++){
+  const forms=['f1','f2','f3','f4'];const targets=[];
+  // Rename the four template sheets for the first group before cloning; every generated name has a group index.
+  const first=activeForExport[0];
+  for(const form of forms){const ws=sources[form];ws.name=uniqueWorksheetName(wb,exportSheetName(form,first,0));targets.push({it:first,form,ws,index:0});}
+  for(let idx=1;idx<activeForExport.length;idx++){
    const it=activeForExport[idx];
-   for(const form of ['f1','f2','f3','f4']){
-    const sheetName=`${/ENCUESTADOR/i.test(it.label)?'ENC':'SUP'}-Item${displayItemNo(it)}`;
-    targets[`${it.item}:${form}`]=idx===0?sources[form]:cloneWorksheet(wb,sources[form],sheetName);
-   }
+   for(const form of forms){const ws=cloneWorksheet(wb,sources[form],uniqueWorksheetName(wb,exportSheetName(form,it,idx)));targets.push({it,form,ws,index:idx});}
   }
-  for(const form of ['f1','f2','f3','f4'])sources[form].name=`${form.toUpperCase()}-Item${activeForExport[0].item}`;
-  for(const it of activeForExport){
-   const list=recordsForExportItem(exportRows,it);
-   if(!list.length)throw new Error(`El ítem ${displayItemNo(it)} no tiene registros asociados; se canceló la exportación para evitar pestañas vacías por error.`);
-   const v1list=list.filter(r=>r.v1Decision==='CONTINUA');
-   const eligibleList=list.filter(eligible);
-   populateForm1(targets[`${it.item}:f1`],it,list);
-   populateForm2(targets[`${it.item}:f2`],it,v1list);
-   populateForm3(targets[`${it.item}:f3`],it,eligibleList);
-   populateForm4(targets[`${it.item}:f4`],it,eligibleList);
+  for(let idx=0;idx<activeForExport.length;idx++){
+   const it=activeForExport[idx];const list=recordsForExportItem(exportRows,it);
+   if(!list.length)throw new Error(`El ítem ${displayItemNo(it)} del universo “${it.universeName||it.universe}” no tiene registros asociados; se canceló la exportación para evitar pestañas vacías por error.`);
+   const v1list=list.filter(r=>r.v1Decision==='CONTINUA');const eligibleList=list.filter(eligible);
+   const t=targets.filter(x=>x.index===idx);const get=form=>t.find(x=>x.form===form).ws;
+   populateForm1(get('f1'),it,list);populateForm2(get('f2'),it,v1list);populateForm3(get('f3'),it,eligibleList);populateForm4(get('f4'),it,eligibleList);
   }
-  applyOfficialWorkbookStyles(wb);
-  if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
-  const buffer=await wb.xlsx.writeBuffer();
-  if(!buffer||buffer.byteLength<5000)throw new Error('El archivo Excel resultante está incompleto. No se descargó.');
-  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Evaluacion_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}_GLOBAL.xlsx`);
-  setSaveState(`Exportación global lista ✓ · ${matched} postulantes · ${activeForExport.length} ítems · ${moduleLabel()}`,'ok');
- }catch(e){console.error('Exportación global:',e);alert('No se pudo generar la exportación global. No se descargó un libro vacío.\n\n'+(e?.message||String(e)));setSaveState('Error al exportar global','error');}
+  const keep=new Set(targets.map(x=>x.ws.id));for(const ws of [...wb.worksheets])if(!keep.has(ws.id))wb.removeWorksheet(ws.id);
+  applyOfficialWorkbookStyles(wb);if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
+  const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<5000)throw new Error('El archivo Excel resultante está incompleto. No se descargó.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Evaluacion_${safeFileName(moduleLabel())}_TODOS_UNIVERSOS_GLOBAL.xlsx`);
+  setSaveState(`Exportación del evaluador lista ✓ · ${matched} registros · ${activeForExport.length} ítems/universos · ${moduleLabel()}`,'ok');
+ }catch(e){console.error('Exportación global del evaluador:',e);alert('No se pudo generar la exportación global del evaluador. No se descargó un libro vacío.\n\n'+(e?.message||String(e)));setSaveState('Error al exportar global','error');}
  finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Exportar global · todos los ítems';delete btn.dataset.oldText;}}
+}
+async function fetchAllReviewersRows(){
+ if(cloudConnected){const saved=await flushCloudChanges();if(!saved)throw new Error(`No se pudieron guardar los cambios actuales del módulo ${moduleLabel()}.`);}
+ const all=await Promise.all(MODULES.map(m=>fetchReportModuleRows(m.id,true)));
+ const rows=all.flat().filter(r=>Number(r.deleted)!==1);
+ if(!rows.length)throw new Error('No se encontraron registros en los módulos seleccionados.');
+ return rows;
+}
+function buildAllReviewerGroups(rows){
+ const groups=new Map();
+ for(const r of rows){
+  const moduleKey=String(r._reportModule||activeModule);const universe=String(r.universe||'principal');const role=String(r.role||'').trim();
+  const label=String(r.itemLabel||r.role||'').trim();const item=Number(r.itemNo)||reportItemFromCargo(label);
+  if(!role||!label||!Number.isFinite(item)||item<1)continue;
+  const key=[moduleKey,universe,role,item,normalize(label)].join('|');
+  if(!groups.has(key))groups.set(key,{item,role,label,universe,universeName:String(r.universeName||universe),moduleKey,moduleLabel:String(r._reportModuleLabel||reportModuleLabelFor(moduleKey)),type:/ENCUESTADOR/i.test(label)?'ENCUESTADOR':'SUPERVISOR'});
+ }
+ return [...groups.values()].sort((a,b)=>a.moduleLabel.localeCompare(b.moduleLabel,'es')||a.universeName.localeCompare(b.universeName,'es')||a.item-b.item||a.label.localeCompare(b.label,'es'));
+}
+function recordsForGlobalGroup(rows,it){return rows.filter(r=>Number(r.deleted)!==1&&String(r._reportModule||'')===String(it.moduleKey)&&String(r.universe||'principal')===String(it.universe)&&String(r.role||'')===String(it.role)&&Number(r.itemNo)===Number(it.item));}
+async function exportAllReviewersWorkbook(){
+ const btn=$('exportAllReviewersBtn');if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Preparando todos los revisores…';}
+ setSaveState('Recuperando todos los revisores desde Cloudflare…','warn');
+ try{
+  if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica la conexión a internet y vuelve a intentarlo.');
+  const rows=await fetchAllReviewersRows();const groups=buildAllReviewerGroups(rows);
+  if(!groups.length)throw new Error('No se identificaron ítems válidos en los módulos y universos de los revisores.');
+  const totalRecords=groups.reduce((sum,it)=>sum+recordsForGlobalGroup(rows,it).length,0);
+  const reviewers=new Set(groups.map(it=>it.moduleKey));
+  if(!confirm(`EXPORTACIÓN GLOBAL · TODOS LOS REVISORES\n\nRevisores con datos: ${reviewers.size}\nÍtems/universos por revisor: ${groups.length}\nRegistros incluidos: ${totalRecords}\nPestañas a generar: ${groups.length*4}\n\nSe incluirán todos los universos disponibles de cada revisor. Las pestañas identificarán formulario, revisor e ítem. ¿Deseas continuar?`)){setSaveState('Exportación global cancelada','warn');return;}
+  const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);
+  const forms=['f1','f2','f3','f4'];const sources={f1:wb.getWorksheet('FORM 1'),f2:wb.getWorksheet('FORM 2'),f3:wb.getWorksheet('FORM 3'),f4:wb.getWorksheet('FORM 4')};
+  for(const [key,ws] of Object.entries(sources))if(!ws)throw new Error(`No se encontró la plantilla oficial del ${key.toUpperCase()} dentro de ANEXOS.xlsx.`);
+  const targets=[];
+  const first=groups[0];
+  for(const form of forms){const ws=sources[form];ws.name=uniqueWorksheetName(wb,exportSheetName(form,first,0,first.moduleKey));targets.push({it:first,form,ws,index:0});}
+  for(let idx=1;idx<groups.length;idx++){
+   const it=groups[idx];for(const form of forms){const ws=cloneWorksheet(wb,sources[form],uniqueWorksheetName(wb,exportSheetName(form,it,idx,it.moduleKey)));targets.push({it,form,ws,index:idx});}
+  }
+  for(let idx=0;idx<groups.length;idx++){
+   const it=groups[idx];const list=recordsForGlobalGroup(rows,it);const v1=list.filter(r=>r.v1Decision==='CONTINUA');const elig=list.filter(eligible);const t=targets.filter(x=>x.index===idx);const get=form=>t.find(x=>x.form===form).ws;
+   populateForm1(get('f1'),it,list);populateForm2(get('f2'),it,v1);populateForm3(get('f3'),it,elig);populateForm4(get('f4'),it,elig);
+  }
+  const keep=new Set(targets.map(x=>x.ws.id));for(const ws of [...wb.worksheets])if(!keep.has(ws.id))wb.removeWorksheet(ws.id);
+  applyOfficialWorkbookStyles(wb);if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
+  const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<5000)throw new Error('El archivo Excel global está incompleto. No se descargó.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Evaluacion_GLOBAL_TODOS_LOS_REVISORES.xlsx`);
+  setSaveState(`Exportación global completa ✓ · ${reviewers.size} revisores · ${groups.length} grupos de ítem/universo · ${totalRecords} registros`,'ok');
+ }catch(e){console.error('Exportación global todos los revisores:',e);alert('No se pudo generar la exportación global de todos los revisores. No se descargó un libro vacío.\n\n'+(e?.message||String(e)));setSaveState('Error en exportación global de revisores','error');}
+ finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Exportación global · todos los revisores';delete btn.dataset.oldText;}}
 }
 async function exportFormWorkbook(formKey){
  const config={
-  form1:{sheet:'FORM 1',name:`Formulario_1_V1_V3_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm1,list:(rows,it)=>recordsForExportItem(rows,it)},
-  form2:{sheet:'FORM 2',name:`Formulario_2_Habilitados_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm2,list:(rows,it)=>recordsForExportItem(rows,it).filter(r=>r.v1Decision==='CONTINUA')},
-  form3:{sheet:'FORM 3',name:`Formulario_3_Puntajes_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm3,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)},
-  form4:{sheet:'FORM 4',name:`Formulario_4_Reporte_final_${safeFileName(moduleLabel())}_${safeFileName(currentUniverseName())}.xlsx`,populate:populateForm4,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)}
+  form1:{sheet:'FORM 1',name:`Formulario_1_V1_V3_${safeFileName(moduleLabel())}_TODOS_UNIVERSOS.xlsx`,populate:populateForm1,list:(rows,it)=>recordsForExportItem(rows,it)},
+  form2:{sheet:'FORM 2',name:`Formulario_2_Habilitados_${safeFileName(moduleLabel())}_TODOS_UNIVERSOS.xlsx`,populate:populateForm2,list:(rows,it)=>recordsForExportItem(rows,it).filter(r=>r.v1Decision==='CONTINUA')},
+  form3:{sheet:'FORM 3',name:`Formulario_3_Puntajes_${safeFileName(moduleLabel())}_TODOS_UNIVERSOS.xlsx`,populate:populateForm3,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)},
+  form4:{sheet:'FORM 4',name:`Formulario_4_Reporte_final_${safeFileName(moduleLabel())}_TODOS_UNIVERSOS.xlsx`,populate:populateForm4,list:(rows,it)=>recordsForExportItem(rows,it).filter(eligible)}
  }[formKey];
  if(!config)return;
  const buttons=[...document.querySelectorAll(`[data-export="${formKey}"]`)];buttons.forEach(b=>{b.disabled=true;b.dataset.oldText=b.textContent;b.textContent='Preparando…';});
@@ -668,20 +725,20 @@ async function exportFormWorkbook(formKey){
   if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Comprueba la conexión a internet y vuelve a intentarlo.');
   const {rows:exportRows,items:active}=await prepareExportSnapshot();
   if(formKey==='form1'&&!validateBeforeExport())throw new Error('Exportación cancelada. Completa las causales obligatorias antes de volver a intentarlo.');
-  const reviewItems=active.map(it=>({...it,count:config.list(exportRows,it).length}));const confirmed=await confirmExportReview(exportRows,reviewItems,`Excel ${formKey.toUpperCase()}`);if(!confirmed){setSaveState('Exportación cancelada por el usuario','warn');return;}
+  const reviewItems=active.map(it=>({...it,count:config.list(exportRows,it).length}));const confirmed=await confirmExportReview(exportRows,reviewItems,`Excel ${formKey.toUpperCase()} · todos los universos del evaluador`);if(!confirmed){setSaveState('Exportación cancelada por el usuario','warn');return;}
   const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
   const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);const source=wb.getWorksheet(config.sheet);if(!source)throw new Error(`No se encontró la plantilla ${config.sheet}.`);
-  const targets=[{it:active[0],ws:source}];
-  for(let i=1;i<active.length;i++){const it=active[i];targets.push({it,ws:cloneWorksheet(wb,source,`${formKey.toUpperCase()}-${/ENCUESTADOR/i.test(it.label)?'ENC':'SUP'}${displayItemNo(it)}`)});}
-  source.name=`${formKey.toUpperCase()}-I${active[0].item}`;
+  const targets=[{it:active[0],ws:source,index:0}];
+  source.name=uniqueWorksheetName(wb,exportSheetName(formKey,active[0],0));
+  for(let i=1;i<active.length;i++){const it=active[i];targets.push({it,index:i,ws:cloneWorksheet(wb,source,uniqueWorksheetName(wb,exportSheetName(formKey,it,i)))});}
   const keep=new Set(targets.map(x=>x.ws.id));for(const ws of [...wb.worksheets])if(!keep.has(ws.id))wb.removeWorksheet(ws.id);
   let formRows=0;
-  for(const {it,ws} of targets){const list=config.list(exportRows,it);if(formKey==='form1'&&!list.length)throw new Error(`El ítem ${displayItemNo(it)} no tiene postulantes asociados. No se generó un formulario vacío.`);formRows+=list.length;config.populate(ws,it,list);}
+  for(const {it,ws} of targets){const list=config.list(exportRows,it);if(formKey==='form1'&&!list.length)throw new Error(`El ítem ${displayItemNo(it)} del universo “${it.universeName||it.universe}” no tiene postulantes asociados. No se generó un formulario vacío.`);formRows+=list.length;config.populate(ws,it,list);}
   applyOfficialWorkbookStyles(wb);
   if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
   const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<3000)throw new Error('El archivo Excel resultante está incompleto. No se descargó.');
   downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),config.name);
-  setSaveState(`Exportación por formulario lista ✓ · ${formRows} registros · ${moduleLabel()}`,'ok');
+  setSaveState(`Exportación por formulario lista ✓ · ${formRows} registros · todos los universos de ${moduleLabel()}`,'ok');
  }catch(e){console.error('Exportación por formulario:',e);alert('No se pudo generar la exportación. No se descargó un archivo vacío.\n\n'+(e?.message||String(e)));setSaveState('Error al exportar formulario','error');}
  finally{buttons.forEach(b=>{b.disabled=false;b.textContent=b.dataset.oldText||`Exportar ${formKey}`;delete b.dataset.oldText;});}
 }
@@ -706,11 +763,18 @@ function reportModuleLabelFor(id){return sharedModuleNames[id]||MODULES.find(m=>
 function renderReportReviewerChoices(){const holder=$('reportReviewerList');if(!holder)return;holder.innerHTML=MODULES.map(m=>{const checked=reportSelectedModules.has(m.id);return `<label class="report-reviewer-option"><input type="checkbox" data-report-module="${esc(m.id)}" ${checked?'checked':''}><span>${esc(reportModuleLabelFor(m.id))}</span></label>`;}).join('');}
 async function apiRequestForModule(path,moduleKey,options={}){const separator=path.includes('?')?'&':'?';const routed=`${path}${separator}module=${encodeURIComponent(moduleKey)}`;const response=await fetch(routed,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})},cache:'no-store'});let data={};try{data=await response.json();}catch(e){}if(!response.ok)throw new Error(data.error||`Error HTTP ${response.status}`);return data;}
 function localRowsForModule(moduleKey){try{const raw=localStorage.getItem(`${STORAGE_KEY}_${moduleKey}`);if(raw){const saved=JSON.parse(raw);if(Array.isArray(saved.records))return saved.records.map(normalizeStoredRecord).filter(r=>Number(r.deleted)!==1);}}catch(e){}return (REVIEWER_SEED[moduleKey]||[]).map(normalizeStoredRecord);}
-async function fetchReportModuleRows(moduleKey){
+async function fetchReportModuleRows(moduleKey,strict=false){
  let rows=[];
  if(moduleKey===activeModule){
   if(cloudConnected){const saved=await flushCloudChanges();if(!saved)throw new Error(`No se pudieron guardar los cambios del módulo ${moduleLabelFor(moduleKey)}.`);}
-  rows=records.filter(r=>Number(r.deleted)!==1).map(r=>({...r}));
+  if(strict){
+   try{
+    let response=await apiRequestForModule('/api/records',moduleKey);let remote=Array.isArray(response.records)?response.records:[];
+    const seed=moduleKey==='principal'?freshRecords():(REVIEWER_SEED[moduleKey]||[]);const remoteIds=new Set(remote.map(r=>Number(r.id)));const missing=seed.filter(r=>!remoteIds.has(Number(r.id)));
+    if(missing.length){await apiRequestForModule('/api/records',moduleKey,{method:'POST',body:JSON.stringify({seed:missing})});response=await apiRequestForModule('/api/records',moduleKey);remote=Array.isArray(response.records)?response.records:[];}
+    rows=remote.filter(r=>Number(r.deleted)!==1).map(normalizeStoredRecord);
+   }catch(error){throw new Error(`No se pudieron recuperar los datos actuales de ${moduleLabelFor(moduleKey)} desde Cloudflare: ${error.message}`);}
+  }else rows=allRecords.filter(r=>Number(r.deleted)!==1).map(r=>({...r}));
  }else{
   try{
    let response=await apiRequestForModule('/api/records',moduleKey);let remote=Array.isArray(response.records)?response.records:[];
@@ -719,11 +783,9 @@ async function fetchReportModuleRows(moduleKey){
    const missing=seed.filter(r=>!remoteIds.has(Number(r.id)));
    if(missing.length){await apiRequestForModule('/api/records',moduleKey,{method:'POST',body:JSON.stringify({seed:missing})});response=await apiRequestForModule('/api/records',moduleKey);remote=Array.isArray(response.records)?response.records:[];}
    rows=remote.filter(r=>Number(r.deleted)!==1).map(normalizeStoredRecord);
-   if(!rows.length)rows=localRowsForModule(moduleKey);
-  }catch(error){rows=localRowsForModule(moduleKey);if(!rows.length)console.warn(`No se pudieron cargar los registros de ${moduleKey}:`,error);}
+   if(!rows.length&&!strict)rows=localRowsForModule(moduleKey);
+  }catch(error){if(strict)throw new Error(`No se pudieron recuperar los datos de ${reportModuleLabelFor(moduleKey)} desde Cloudflare: ${error.message}`);rows=localRowsForModule(moduleKey);if(!rows.length)console.warn(`No se pudieron cargar los registros de ${moduleKey}:`,error);}
  }
- // Informe global: cargar todos los universos guardados de cada revisor seleccionado.
- // El universo activo solo controla la vista de trabajo y no debe ocultar registros en el informe.
  return rows.map(r=>({...r,_reportModule:moduleKey,_reportModuleLabel:reportModuleLabelFor(moduleKey),_reportKey:`${moduleKey}:${r.id}:${r.universe||''}`}));
 }
 async function loadReportSelectionData(){
@@ -909,12 +971,12 @@ function confirmWordReportReview(selected){
   return {...it,proponents,includedCount,evaluated,enabled,possible:scored.length,tiedCount,missing:proponents===0,reviewReason};
  });
  const totals=perItem.reduce((a,it)=>({proponents:a.proponents+it.proponents,includedCount:a.includedCount+it.includedCount,evaluated:a.evaluated+it.evaluated,enabled:a.enabled+it.enabled,possible:a.possible+it.possible,tied:a.tied+it.tiedCount}),{proponents:0,includedCount:0,evaluated:0,enabled:0,possible:0,tied:0});
- $('exportReviewTitle').textContent='Revisión previa · Informe Word · LP-1.6.0';
+ $('exportReviewTitle').textContent='Revisión previa · Informe Word · LP-1.7.0';
  $('cancelExportReviewBtn').textContent='Volver a revisar';$('acceptExportReviewBtn').textContent='Confirmar y generar Word';
- $('exportReviewSummary').innerHTML=`<div class="notice"><strong>Versión del sistema: LP-1.6.0.</strong> Se revisan todos los universos guardados de los revisores seleccionados, no solo la pestaña activa. “Proponentes cargados” cuenta personas únicas encontradas en el sistema; “incluidos en Word” cuenta los marcados para el informe. Rojo significa que no hay datos cargados para ese cargo; amarillo indica que el cargo requiere revisión, por ejemplo por falta de selección, ausencia de habilitados o empate.</div><div class="export-review-section"><h3>Resumen por cargo · numeración visible: supervisores 1–15 y encuestadores 1–45</h3><div class="tablewrap" style="max-height:none;min-width:0;overflow:visible"><table style="min-width:0;width:100%;border-collapse:collapse"><thead><tr><th style="position:static">Ítem</th><th style="position:static">Cargo</th><th style="position:static;text-align:center">Proponentes cargados</th><th style="position:static;text-align:center">Incluidos en Word</th><th style="position:static;text-align:center">Evaluados</th><th style="position:static;text-align:center">Habilitados</th><th style="position:static;text-align:center">Posibles adjudicados (&gt;50)</th><th style="position:static;text-align:center">Empatados en nota máxima</th><th style="position:static">Estado</th></tr></thead><tbody>${perItem.map(it=>`<tr class="${it.missing?'preview-missing':it.reviewReason?'preview-review':''}"><td>${displayItemNoFromLabel(it.item,it.label)}</td><td>${esc(it.label||'Cargo no identificado')}</td><td style="text-align:center;font-weight:800">${it.proponents}</td><td style="text-align:center">${it.includedCount}</td><td style="text-align:center">${it.evaluated}</td><td style="text-align:center">${it.enabled}</td><td style="text-align:center">${it.possible}</td><td style="text-align:center">${it.tiedCount||'—'}</td><td>${esc(it.reviewReason||'OK')}</td></tr>`).join('')||'<tr><td colspan="9">No hay ítems en el universo seleccionado.</td></tr>'}</tbody><tfoot><tr><th colspan="2" style="position:static;text-align:right">Totales</th><th style="position:static;text-align:center">${totals.proponents}</th><th style="position:static;text-align:center">${totals.includedCount}</th><th style="position:static;text-align:center">${totals.evaluated}</th><th style="position:static;text-align:center">${totals.enabled}</th><th style="position:static;text-align:center">${totals.possible}</th><th style="position:static;text-align:center">${totals.tied||'—'}</th><th style="position:static">Rojo: sin datos cargados. Amarillo: requiere revisión.</th></tr></tfoot></table></div></div>`;
+ $('exportReviewSummary').innerHTML=`<div class="notice"><strong>Versión del sistema: LP-1.7.0.</strong> Se revisan todos los universos guardados de los revisores seleccionados, no solo la pestaña activa. “Proponentes cargados” cuenta personas únicas encontradas en el sistema; “incluidos en Word” cuenta los marcados para el informe. Rojo significa que no hay datos cargados para ese cargo; amarillo indica que el cargo requiere revisión, por ejemplo por falta de selección, ausencia de habilitados o empate.</div><div class="export-review-section"><h3>Resumen por cargo · numeración visible: supervisores 1–15 y encuestadores 1–45</h3><div class="tablewrap" style="max-height:none;min-width:0;overflow:visible"><table style="min-width:0;width:100%;border-collapse:collapse"><thead><tr><th style="position:static">Ítem</th><th style="position:static">Cargo</th><th style="position:static;text-align:center">Proponentes cargados</th><th style="position:static;text-align:center">Incluidos en Word</th><th style="position:static;text-align:center">Evaluados</th><th style="position:static;text-align:center">Habilitados</th><th style="position:static;text-align:center">Posibles adjudicados (&gt;50)</th><th style="position:static;text-align:center">Empatados en nota máxima</th><th style="position:static">Estado</th></tr></thead><tbody>${perItem.map(it=>`<tr class="${it.missing?'preview-missing':it.reviewReason?'preview-review':''}"><td>${displayItemNoFromLabel(it.item,it.label)}</td><td>${esc(it.label||'Cargo no identificado')}</td><td style="text-align:center;font-weight:800">${it.proponents}</td><td style="text-align:center">${it.includedCount}</td><td style="text-align:center">${it.evaluated}</td><td style="text-align:center">${it.enabled}</td><td style="text-align:center">${it.possible}</td><td style="text-align:center">${it.tiedCount||'—'}</td><td>${esc(it.reviewReason||'OK')}</td></tr>`).join('')||'<tr><td colspan="9">No hay ítems en el universo seleccionado.</td></tr>'}</tbody><tfoot><tr><th colspan="2" style="position:static;text-align:right">Totales</th><th style="position:static;text-align:center">${totals.proponents}</th><th style="position:static;text-align:center">${totals.includedCount}</th><th style="position:static;text-align:center">${totals.evaluated}</th><th style="position:static;text-align:center">${totals.enabled}</th><th style="position:static;text-align:center">${totals.possible}</th><th style="position:static;text-align:center">${totals.tied||'—'}</th><th style="position:static">Rojo: sin datos cargados. Amarillo: requiere revisión.</th></tr></tfoot></table></div></div>`;
  $('exportReviewIssues').innerHTML='';$('exportReviewIssues').classList.add('hide');
  const restore=()=>{$('cancelExportReviewBtn').textContent='Cancelar descarga';$('acceptExportReviewBtn').textContent='Confirmar y descargar';};
- if(!dialog||typeof dialog.showModal!=='function'){restore();return Promise.resolve(confirm(`Revisión previa del informe Word · LP-1.6.0\n${perItem.map(it=>`Ítem ${displayItemNoFromLabel(it.item,it.label)}: cargados ${it.proponents}, incluidos ${it.includedCount}, evaluados ${it.evaluated}, habilitados ${it.enabled}, posibles adjudicados ${it.possible}, empate nota máxima ${it.tiedCount||0}${it.reviewReason?`, REVISAR: ${it.reviewReason}`:''}`).join('\\n')}\n\n¿Generar Word?`));}
+ if(!dialog||typeof dialog.showModal!=='function'){restore();return Promise.resolve(confirm(`Revisión previa del informe Word · LP-1.7.0\n${perItem.map(it=>`Ítem ${displayItemNoFromLabel(it.item,it.label)}: cargados ${it.proponents}, incluidos ${it.includedCount}, evaluados ${it.evaluated}, habilitados ${it.enabled}, posibles adjudicados ${it.possible}, empate nota máxima ${it.tiedCount||0}${it.reviewReason?`, REVISAR: ${it.reviewReason}`:''}`).join('\\n')}\n\n¿Generar Word?`));}
  dialog.returnValue='cancel';dialog.showModal();return new Promise(resolve=>{const done=()=>{dialog.removeEventListener('close',done);restore();resolve(dialog.returnValue==='accept');};dialog.addEventListener('close',done);});
 }
 async function generateWordReport(){
@@ -980,7 +1042,7 @@ $('f3Rows').addEventListener('change',e=>{const el=e.target;if(!el.dataset.key||
 $('causeOptions').addEventListener('change',()=>{activeCause.selected=selectedCauseId();updateOtherVisibility();});$('causeSearch').addEventListener('input',()=>{const type=activeCause.type||'v1';renderCauseOptions(type==='v1'?CAUSALS_V1:CAUSALS_V3,activeCause.selected||'');});$('saveCause').addEventListener('click',saveCauseSelection);$('cancelCause').addEventListener('click',()=>$('causeDialog').close());$('closeCauseTop').addEventListener('click',()=>$('causeDialog').close());
 $('toggleCriteria').addEventListener('click',()=>{const c=$('criteriaContent');const hidden=c.classList.toggle('hide');$('toggleCriteria').textContent=hidden?'Mostrar criterios':'Contraer criterios';});
 $('closeExportReviewTop').addEventListener('click',()=>{$('exportReviewDialog').close('cancel');});$('cancelExportReviewBtn').addEventListener('click',()=>{$('exportReviewDialog').close('cancel');});$('acceptExportReviewBtn').addEventListener('click',()=>{$('exportReviewDialog').close('accept');});
-$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);$('exportReportBtn').addEventListener('click',openReportDialog);$('closeReportTop').addEventListener('click',()=>$('reportDialog').close());$('cancelReportBtn').addEventListener('click',()=>$('reportDialog').close());$('generateReportBtn').addEventListener('click',generateWordReport);$('reportSearch').addEventListener('input',renderReportSelection);$('reportItemFilter').addEventListener('change',renderReportSelection);$('reportReviewerList').addEventListener('change',async e=>{const cb=e.target.closest('input[data-report-module]');if(!cb)return;const id=String(cb.dataset.reportModule);if(cb.checked)reportSelectedModules.add(id);else{reportSelectedModules.delete(id);for(const key of [...reportSelectedIds])if(String(key).startsWith(`${id}:`))reportSelectedIds.delete(key);}try{await loadReportSelectionData();}catch(error){console.error(error);$('reportSelectionCount').textContent='No se pudieron cargar algunos revisores. Revisa la conexión y vuelve a intentarlo.';}});$('reportUserList').addEventListener('change',e=>{const cb=e.target.closest('input[data-report-key]');if(!cb)return;const key=String(cb.dataset.reportKey);if(cb.checked)reportSelectedIds.add(key);else reportSelectedIds.delete(key);$('reportSelectionCount').textContent=`${reportSelectedIds.size} seleccionados · ${reportRows().length} postulantes de ${reportSelectedModules.size} revisor(es)`;});$('reportSelectVisibleBtn').addEventListener('click',()=>{$('reportUserList').querySelectorAll('input[data-report-key]').forEach(cb=>reportSelectedIds.add(String(cb.dataset.reportKey)));renderReportSelection();});$('reportClearBtn').addEventListener('click',()=>{reportSelectedIds.clear();renderReportSelection();});$('loadReportTemplateBtn').addEventListener('click',()=>$('reportTemplateFile').click());$('reportTemplateFile').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(!f.name.toLowerCase().endsWith('.docx'))throw new Error('Selecciona un archivo Word .docx.');reportTemplateBytes=await f.arrayBuffer();reportTemplateName=f.name;$('reportTitle').textContent=`Generar informe Word · Modelo: ${reportTemplateName}`;alert(`Modelo Word cargado para esta sesión: ${reportTemplateName}.`);}catch(err){alert(err.message||String(err));}finally{e.target.value='';}});$('renameModuleBtn').addEventListener('click',renameActiveModule);$('downloadUniverseTemplateBtn').addEventListener('click',downloadUniverseTemplate);$('addPersonBtn').addEventListener('click',openAddPersonDialog);$('personForm').addEventListener('submit',addPersonManual);$('cancelPerson').addEventListener('click',()=>$('personDialog').close());$('closePersonTop').addEventListener('click',()=>$('personDialog').close());$('personItemNo').addEventListener('change',()=>{const n=Number($('personItemNo').value);if(activeModule==='principal'){const current=$('personItemLabel').value;const type=/ENCUESTADOR/i.test(current)?'ENCUESTADOR':'SUPERVISOR';const it=ITEMS.find(x=>displayItemNo(x)===n&&String(x.type||'').toUpperCase()===type)||ITEMS.find(x=>displayItemNo(x)===n);if(it)$('personItemLabel').value=it.label;}else{const existing=allRecords.find(r=>r.universe===currentUniverse&&Number(r.itemNo)===n);if(existing)$('personItemLabel').value=existing.itemLabel||existing.role;}});$('importUniverseBtn').addEventListener('click',()=>$('universeFile').click());$('universeFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importUniverseFile(file);e.target.value='';});$('moduleTabs').addEventListener('click',e=>{const b=e.target.closest('[data-module]');if(b)switchModule(b.dataset.module);});$('universeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-universe]');if(b)switchUniverse(b.dataset.universe);});document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);
+$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);$('exportAllReviewersBtn').addEventListener('click',exportAllReviewersWorkbook);$('exportReportBtn').addEventListener('click',openReportDialog);$('closeReportTop').addEventListener('click',()=>$('reportDialog').close());$('cancelReportBtn').addEventListener('click',()=>$('reportDialog').close());$('generateReportBtn').addEventListener('click',generateWordReport);$('reportSearch').addEventListener('input',renderReportSelection);$('reportItemFilter').addEventListener('change',renderReportSelection);$('reportReviewerList').addEventListener('change',async e=>{const cb=e.target.closest('input[data-report-module]');if(!cb)return;const id=String(cb.dataset.reportModule);if(cb.checked)reportSelectedModules.add(id);else{reportSelectedModules.delete(id);for(const key of [...reportSelectedIds])if(String(key).startsWith(`${id}:`))reportSelectedIds.delete(key);}try{await loadReportSelectionData();}catch(error){console.error(error);$('reportSelectionCount').textContent='No se pudieron cargar algunos revisores. Revisa la conexión y vuelve a intentarlo.';}});$('reportUserList').addEventListener('change',e=>{const cb=e.target.closest('input[data-report-key]');if(!cb)return;const key=String(cb.dataset.reportKey);if(cb.checked)reportSelectedIds.add(key);else reportSelectedIds.delete(key);$('reportSelectionCount').textContent=`${reportSelectedIds.size} seleccionados · ${reportRows().length} postulantes de ${reportSelectedModules.size} revisor(es)`;});$('reportSelectVisibleBtn').addEventListener('click',()=>{$('reportUserList').querySelectorAll('input[data-report-key]').forEach(cb=>reportSelectedIds.add(String(cb.dataset.reportKey)));renderReportSelection();});$('reportClearBtn').addEventListener('click',()=>{reportSelectedIds.clear();renderReportSelection();});$('loadReportTemplateBtn').addEventListener('click',()=>$('reportTemplateFile').click());$('reportTemplateFile').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(!f.name.toLowerCase().endsWith('.docx'))throw new Error('Selecciona un archivo Word .docx.');reportTemplateBytes=await f.arrayBuffer();reportTemplateName=f.name;$('reportTitle').textContent=`Generar informe Word · Modelo: ${reportTemplateName}`;alert(`Modelo Word cargado para esta sesión: ${reportTemplateName}.`);}catch(err){alert(err.message||String(err));}finally{e.target.value='';}});$('renameModuleBtn').addEventListener('click',renameActiveModule);$('downloadUniverseTemplateBtn').addEventListener('click',downloadUniverseTemplate);$('addPersonBtn').addEventListener('click',openAddPersonDialog);$('personForm').addEventListener('submit',addPersonManual);$('cancelPerson').addEventListener('click',()=>$('personDialog').close());$('closePersonTop').addEventListener('click',()=>$('personDialog').close());$('personItemNo').addEventListener('change',()=>{const n=Number($('personItemNo').value);if(activeModule==='principal'){const current=$('personItemLabel').value;const type=/ENCUESTADOR/i.test(current)?'ENCUESTADOR':'SUPERVISOR';const it=ITEMS.find(x=>displayItemNo(x)===n&&String(x.type||'').toUpperCase()===type)||ITEMS.find(x=>displayItemNo(x)===n);if(it)$('personItemLabel').value=it.label;}else{const existing=allRecords.find(r=>r.universe===currentUniverse&&Number(r.itemNo)===n);if(existing)$('personItemLabel').value=existing.itemLabel||existing.role;}});$('importUniverseBtn').addEventListener('click',()=>$('universeFile').click());$('universeFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importUniverseFile(file);e.target.value='';});$('moduleTabs').addEventListener('click',e=>{const b=e.target.closest('[data-module]');if(b)switchModule(b.dataset.module);});$('universeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-universe]');if(b)switchUniverse(b.dataset.universe);});document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);
 $('backupBtn').addEventListener('click',downloadBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importBackupFile(file);e.target.value='';});
 $('resetBtn').addEventListener('click',()=>{if(!confirm(`¿Restablecer las evaluaciones, causales y puntajes del universo “${currentUniverseName()}”? Se conservarán los nombres, cargos e ítems de este universo.`))return;pushHistory();records=records.map(r=>({...r,a1:'',a2:'',c1doc:'',c2doc:'',v1Decision:'',v1Cause:'',v1Other:'',v3Status:'',v3Cause:'',v3Other:'',education:'',general:'',specific:'',notes:''}));persistNow();renderAll();syncAllToCloud();});
 $('f1TopBtn').addEventListener('click',()=>{$('f1TableWrap').scrollTo({left:0,top:0,behavior:'auto'});$('f1TopScroll').scrollTo({left:0,behavior:'auto'});});$('toTopBtn').addEventListener('click',()=>$('top').scrollIntoView({behavior:'auto'}));
