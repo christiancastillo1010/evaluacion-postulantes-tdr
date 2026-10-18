@@ -1,14 +1,34 @@
 # Evaluación de postulantes — versión final de carga para La Paz
 
 ## Contenido
-- `index.html`: aplicación y generador de informe Word multirrevisor.
+- `index.html`: aplicación, exportaciones Excel con revisión previa y generador de informe Word multirrevisor.
 - `functions/api/records.js`: API Cloudflare Pages Functions; usa la base D1 existente mediante el binding `DB`.
-- `INFORME_MODELO_LA_PAZ.docx`: modelo Word de La Paz proporcionado por el usuario; se conserva el diseño y el color celeste. Los cuadros de evaluación se regeneran según los postulantes seleccionados.
-- `ANEXOS.xlsx`: plantilla de exportación Excel.
+- `INFORME_MODELO_LA_PAZ.docx`: modelo Word proporcionado por el usuario. Se conserva el color celeste; los cuadros se regeneran según los postulantes seleccionados.
+- `ANEXOS.xlsx`: plantilla oficial de exportación Excel.
 - `MODELO_IMPORTAR_UNIVERSO.xlsx`: plantilla para importar nuevos universos.
 - `UNIVERSO_ITEMS_LA_PAZ_60_CORREGIDO.xlsx`: referencia del universo oficial de 60 ítems.
 - `REVISORES_MANIFEST.json` e `IMPORTACION_REVISORES.md`: conteos y observaciones de importación.
 - `.nojekyll`: archivo de Pages.
+
+## Mejoras del informe Word
+- Cada cuadro lleva un título con número de ítem, cargo y tipo de formulario.
+- Se normaliza el texto de los cuadros a Arial 8 pt; los números correlativos se generan una sola vez, con la misma letra y tamaño que el resto del cuadro.
+- Se elimina el espaciado excesivo y se agrega un espacio uniforme entre cuadros.
+- La nómina de proponentes tiene columnas N°, ÍTEM, PROPONENTE, FECHA y HORA. Fecha y hora quedan vacías para completar con el reporte de apertura; no se inventan.
+- Las aclaraciones de empate aparecen inmediatamente debajo del cuadro del ítem correspondiente cuando hay puntajes finales iguales de 50 o más; no quedan como nota general al final. Se eliminan las aclaraciones de ejemplo que nombraban a postulantes de otro informe.
+- La tabla final de acefalías se llena con los ítems sin postulantes habilitados en V-1 + V-3 con evaluación C-2 completa, según los módulos seleccionados. En el diálogo Word se marcan por defecto todos los módulos disponibles, y el usuario puede desmarcar los que no correspondan.
+- Se conserva el color celeste del modelo Word y la narración base.
+
+## Revisión previa de Excel
+Antes de descargar un Excel global o por formulario, aparece una ventana de confirmación con:
+- cantidad de registros y nombres únicos;
+- ítems incluidos en el archivo;
+- cantidad que continúa en V-1 y cantidad habilitada por V-1 + V-3;
+- cantidad con puntaje final mayor a 70 y exactamente 70;
+- posibles acefalías;
+- inconsistencias con número de ítem, nombre de la persona y descripción del problema.
+
+La ventana permite cancelar la descarga para corregir los datos antes de generar el archivo. El listado de inconsistencias incluye el ítem, el nombre de la persona y el detalle del problema. La revisión se muestra antes de exportar tanto el libro global como cada formulario individual.
 
 ## Revisores precargados
 Incluye los módulos JAQUELINE (204 registros únicos) y XIMENA (206 registros únicos), en la misma base D1 y aislados por módulo.
@@ -21,14 +41,11 @@ El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47�
 - Ítems globales 16–60: Encuestadores La Paz I–XLV.
 - Los números locales de encuestadores se convierten al correlativo global sumando 15.
 
-## Informe Word
-La opción **Generar informe Word** usa por defecto `INFORME_MODELO_LA_PAZ.docx`. Permite seleccionar uno o varios revisores y postulantes; organiza los cuadros por número de ítem. Se conserva el color celeste del modelo. Los cuadros de ejemplo se reemplazan con los datos seleccionados. Las fechas y horas no disponibles en el sistema permanecen vacías.
-
 ## Subida a GitHub / Cloudflare Pages
 1. Descomprime el ZIP.
 2. Sube el contenido completo a la raíz del repositorio conectado a Cloudflare Pages, conservando la ruta `functions/api/records.js`.
 3. Mantén el binding `DB` y la base D1 existentes; no crees otra base ni borres la actual.
 4. Haz commit en la rama de despliegue y espera a que Cloudflare termine.
-5. Prueba el módulo principal, JAQUELINE y XIMENA, y genera un Word de prueba con unos pocos postulantes.
+5. Prueba el módulo principal, JAQUELINE y XIMENA. Antes de descargar Excel, revisa la ventana previa. Genera un Word de prueba con pocos postulantes y verifica títulos, numeración, espacios, fechas/horas vacías y notas de empate.
 
 No se ha desplegado directamente en la cuenta Cloudflare; debe completarse el commit y verificarse el sitio publicado.
