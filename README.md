@@ -87,3 +87,11 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - La tabla replica las 17 columnas del modelo oficial ANEXOS.xlsx, sin columnas adicionales, nombres de evaluadores ni encabezados extra.
 - Los encabezados se repiten si una tabla continúa en otra página.
 - Los nombres de pestañas y archivos Excel ya no incluyen identificadores de evaluadores.
+
+
+## LP-1.9.3 · Visualizador global del Formulario 4
+
+- Añade la pestaña **Visualizador global · todos los ítems**, consolidando los proponentes habilitados de todos los módulos y universos sin mostrar columnas de revisor.
+- Añade **Descargar Excel global · Formulario 4**: un único cuadro/hoja, con N.º, ítem, cargo, proponente, C-1, C-2, puntaje final y estado de puntajes.
+- Ordena las notas finales de mayor a menor y deja al final los registros con puntaje pendiente, sin inventar notas.
+- Si no se puede recuperar el conjunto global completo, el visualizador/exportador informa el error y no genera un archivo parcial.
