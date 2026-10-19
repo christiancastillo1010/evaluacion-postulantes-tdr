@@ -43,7 +43,7 @@
 </head>
 <body>
 <header class="hero" id="top">
-  <div class="kicker">Sistema de evaluación · La Paz · Versión LP-1.9.3 · 18/10/2026</div>
+  <div class="kicker">Sistema de evaluación · La Paz · Versión LP-1.9.4 · 18/10/2026</div>
   <h1>Evaluación de postulantes</h1>
   <p class="cuce"><strong>CUCE:</strong> 26-0206-00-1690417-1-2</p>
   <p><strong>Objeto:</strong> CONTRATACIÓN DE CONSULTOR INDIVIDUAL DE LÍNEA AUXILIAR 1 - SUPERVISOR DE CAMPO LA PAZ QUINCE (15) VACANCIAS Y AUXILIAR 2 -ENCUESTADOR LA PAZ CUARENTA Y CINCO (45) VACANCIAS</p>
@@ -91,6 +91,8 @@
         <button class="danger smallbtn" id="resetBtn">Restablecer evaluaciones</button>
         <button class="primary" id="exportOfficialBtn" title="Descargar los cuatro formularios de todos los ítems y universos del evaluador actual">Exportar global · todos los ítems</button>
         <button class="primary" id="exportAllReviewersBtn" title="Descargar los cuatro formularios de todos los ítems y universos">Exportación global consolidada</button>
+        <button class="primary" id="exportGlobalForm2Btn" type="button" title="Descargar el Formulario 2 global de todos los ítems y universos">Exportar Formulario 2 global</button>
+        <button class="soft" id="exportDepartmentSummaryBtn" type="button" title="Generar resumen departamental de postulantes, habilitaciones cruzadas y causales">Excel resumen departamental La Paz</button>
         <button class="soft" id="printAnnexesBtn" type="button" title="Descargar en Word todos los formularios 1 por ítem, con el formato oficial">Descargar anexos Word · Formulario 1</button>
         <button class="primary" id="exportReportBtn" title="Generar informe Word a partir del modelo y de los postulantes seleccionados">Generar informe Word</button>
       </div>
@@ -185,7 +187,7 @@
     <div class="filters"><input id="global4Search" type="search" placeholder="Buscar proponente o cargo…" aria-label="Buscar proponente o cargo"><select id="global4ItemFilter" aria-label="Filtrar por ítem"><option value="todos">Todos los ítems</option></select><span class="mini" id="global4CountLabel">Aún no se han cargado los datos globales.</span></div>
     <div class="tablewrap" id="global4TableWrap"><table id="globalForm4Table"><thead><tr><th>N.º</th><th>Ítem</th><th>Cargo</th><th>Proponente habilitado</th><th>C-1 /35</th><th>C-2 /35</th><th>Puntaje final /70</th><th>Estado C-2</th></tr></thead><tbody id="global4Rows"><tr><td colspan="8" class="empty">Pulsa “Actualizar visualizador” para cargar todos los ítems.</td></tr></tbody></table></div>
   </section>
-  <div class="footer">Versión multiusuario · 7 módulos aislados en una sola base D1 · Autoguardado Cloudflare · Exportaciones Excel por formulario y global, visualizador global del Formulario 4 e informe Word basado en el modelo provisional de La Paz.</div>
+  <div class="footer">Versión multiusuario · 7 módulos aislados en una sola base D1 · Autoguardado Cloudflare · Exportaciones globales de Formularios 2 y 4, resumen departamental de depuración cruzada e informe Word basado en el modelo de La Paz.</div>
 </main>
 
 <dialog class="modal person-modal" id="personDialog" aria-labelledby="personTitle">
@@ -217,7 +219,7 @@
   <div class="modal-foot"><button class="soft" id="cancelExportReviewBtn" type="button" value="cancel">Cancelar descarga</button><button class="primary" id="acceptExportReviewBtn" type="button" value="accept">Confirmar y descargar</button></div>
 </dialog>
 <dialog class="modal" id="reportDialog" aria-labelledby="reportTitle">
-  <div class="modal-head"><div><h2 id="reportTitle">Generar informe Word</h2><p>Versión LP-1.9.3 · Numeración independiente por tipo de cargo: supervisores 1–15 y encuestadores 1–45. Antes de descargar se mostrará el resumen por ítem.</p></div><button class="soft smallbtn" id="closeReportTop" type="button">Cerrar</button></div>
+  <div class="modal-head"><div><h2 id="reportTitle">Generar informe Word</h2><p>Versión LP-1.9.4 · Numeración independiente por tipo de cargo: supervisores 1–15 y encuestadores 1–45. Antes de descargar se mostrará el resumen por ítem.</p></div><button class="soft smallbtn" id="closeReportTop" type="button">Cerrar</button></div>
   <div class="modal-body">
     <div class="notice"><strong>Modelo provisional:</strong> se conserva el diseño y los colores celestes del modelo de La Paz. Los cuadros se insertan por ítem y el modelo podrá sustituirse más adelante sin cambiar los datos de evaluación. La numeración visible es independiente por tipo: supervisores 1–15 y encuestadores 1–45. El identificador interno se conserva para no alterar los datos guardados.</div>
     <div class="report-reviewer-block"><strong>Revisores que aportarán datos al informe</strong><div id="reportReviewerList" class="report-reviewer-list"></div><p class="mini">Puedes combinar revisores. Si el mismo postulante aparece en más de un revisor para el mismo ítem, el sistema te avisará antes de generar el Word.</p></div>
@@ -383,6 +385,181 @@ async function exportGlobalForm4Excel(){
   const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<3000)throw new Error('El Excel global está incompleto. No se descargó.');downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Formulario_4_Global_Todos_Items_Ordenado_Por_Nota.xlsx');setSaveState(`Excel global del Formulario 4 listo ✓ · ${entries.length} proponentes · ${entries.filter(r=>r.final!==null).length} con nota final`,'ok');
  }catch(error){console.error('Excel global Formulario 4:',error);alert(`No se pudo generar el Excel global del Formulario 4. No se descargó un archivo vacío.\n\n${error?.message||String(error)}`);setSaveState('Error al exportar Formulario 4 global','error');}
  finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Descargar Excel global · Formulario 4';delete btn.dataset.oldText;}}
+}
+function departmentItemKey(r){
+ const label=String(r.itemLabel||r.role||'Cargo no identificado').trim();
+ const internalItem=Number(reportItemNo(r))||Number(r.itemNo)||1;
+ return `${internalItem}|${normalize(label)}`;
+}
+function departmentGlobalItems(rows){
+ const map=new Map();
+ for(const r of rows){
+  if(Number(r.deleted)===1)continue;
+  const label=String(r.itemLabel||r.role||'Cargo no identificado').trim();
+  if(!label)continue;
+  const internalItem=Number(reportItemNo(r))||Number(r.itemNo)||1;
+  const key=departmentItemKey(r);
+  if(!map.has(key))map.set(key,{key,internalItem,item:displayItemNoFromLabel(internalItem,label),label,type:/ENCUESTADOR/i.test(label)?'ENCUESTADOR':'SUPERVISOR',rows:[]});
+  map.get(key).rows.push(r);
+ }
+ return [...map.values()].sort((a,b)=>a.internalItem-b.internalItem||a.label.localeCompare(b.label,'es'));
+}
+function uniqueCandidateRows(rows){
+ const map=new Map();
+ for(const r of rows){const key=normalize(r.name);if(!key)continue;if(!map.has(key))map.set(key,r);}
+ return [...map.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es'));
+}
+function deptCausalList(rows,type){
+ const out=new Set();
+ for(const r of rows){
+  const relevant=type==='v1'?r.v1Decision==='DESCALIFICADO':r.v1Decision!=='DESCALIFICADO'&&r.v1Decision==='CONTINUA'&&r.v3Status==='NO_CUMPLE';
+  if(!relevant)continue;
+  const cause=causeDescription(r,type);
+  if(cause)out.add(cause);
+ }
+ return [...out].join(' | ');
+}
+function departmentItemStatus(group){
+ const rows=group.rows;
+ const enabled=rows.filter(eligible);
+ const v1Disq=rows.filter(r=>r.v1Decision==='DESCALIFICADO');
+ const v3Disq=rows.filter(r=>r.v1Decision==='CONTINUA'&&r.v3Status==='NO_CUMPLE');
+ const pending=rows.filter(r=>!r.v1Decision||(r.v1Decision==='CONTINUA'&&!r.v3Status));
+ const hasDisq=v1Disq.length+v3Disq.length>0;
+ const validCause=r=>r.v1Decision==='DESCALIFICADO'&&!!r.v1Cause&&(r.v1Cause!=='OTROS'||!!String(r.v1Other||'').trim()) || r.v1Decision==='CONTINUA'&&r.v3Status==='NO_CUMPLE'&&!!r.v3Cause&&(r.v3Cause!=='OTROS'||!!String(r.v3Other||'').trim());
+ const allDepurated=rows.length>0&&rows.every(validCause);
+ const discrepancy=enabled.length>0&&(hasDisq||pending.length>0);
+ let status='SIN HABILITACIÓN';
+ if(enabled.length&&discrepancy)status='DISCREPANCIA EN EL MISMO ÍTEM';
+ else if(enabled.length)status='HABILITADO';
+ else if(pending.length)status='PENDIENTE / REVISAR';
+ else if(hasDisq&&!allDepurated)status='FALTA CAUSAL COMPLETA';
+ else if(hasDisq&&allDepurated)status='DESCALIFICADO CON CAUSAL';
+ const v1= new Set(rows.map(r=>r.v1Decision||'PENDIENTE'));
+ const v3= new Set(rows.map(r=>r.v1Decision==='DESCALIFICADO'?'NO REQUERIDO':r.v3Status||'PENDIENTE'));
+ return {enabled:enabled.length>0,enabledCount:enabled.length,v1Disq:v1Disq.length>0,v3Disq:v3Disq.length>0,pending:pending.length>0,hasDisq,allDepurated,discrepancy,status,v1:[...v1].map(v=>v==='CONTINUA'?'Continúa':v==='DESCALIFICADO'?'Descalificado':'Pendiente').join(' / '),v3:[...v3].map(v=>v==='CUMPLE'?'Cumple':v==='NO_CUMPLE'?'No cumple':v).join(' / '),causeV1:deptCausalList(rows,'v1'),causeV3:deptCausalList(rows,'v3'),records:rows};
+}
+function buildDepartmentSummary(rows){
+ const byPerson=new Map();
+ for(const r of rows){
+  if(Number(r.deleted)===1||!String(r.name||'').trim())continue;
+  const personKey=normalize(r.name);const itemKey=departmentItemKey(r);
+  if(!byPerson.has(personKey))byPerson.set(personKey,{key:personKey,name:String(r.name).trim(),items:new Map()});
+  const person=byPerson.get(personKey);
+  if(!person.items.has(itemKey)){const label=String(r.itemLabel||r.role||'Cargo no identificado').trim();const internalItem=Number(reportItemNo(r))||Number(r.itemNo)||1;person.items.set(itemKey,{key:itemKey,internalItem,item:displayItemNoFromLabel(internalItem,label),label,rows:[]});}
+  person.items.get(itemKey).rows.push(r);
+ }
+ const people=[...byPerson.values()].map(person=>{
+  const items=[...person.items.values()].map(g=>({...g,...departmentItemStatus(g)})).sort((a,b)=>a.internalItem-b.internalItem||a.label.localeCompare(b.label,'es'));
+  const enabled=items.filter(i=>i.enabled);
+  const multiple=enabled.length>1;
+  const multiItem=items.length>1;
+  const unDepurated=multiItem&&items.some(i=>!i.enabled&&!i.allDepurated);
+  const discrepancy=items.some(i=>i.discrepancy||i.status==='PENDIENTE / REVISAR'||i.status==='FALTA CAUSAL COMPLETA');
+  let control='OK';
+  if(multiple)control='ALERTA: HABILITADO EN MÁS DE UN ÍTEM';
+  else if(discrepancy)control='REVISAR: ESTADOS O CAUSALES INCOMPLETOS';
+  else if(unDepurated)control='REVISAR: FALTA DEPURACIÓN CON CAUSAL';
+  else if(multiItem&&enabled.length===1)control='OK: UNA SOLA HABILITACIÓN';
+  else if(multiItem&&enabled.length===0&&items.every(i=>i.allDepurated))control='DEPURADO CON CAUSALES';
+  return {name:person.name,items,enabled,multiple,multiItem,unDepurated,discrepancy,control};
+ }).sort((a,b)=>{
+  const rank=x=>x.multiple?0:(x.discrepancy||x.unDepurated)?1:2;
+  return rank(a)-rank(b)||a.name.localeCompare(b.name,'es');
+ });
+ const details=[];
+ for(const person of people){
+  for(const it of person.items){
+   let review='';
+   if(person.multiple)review='ALERTA: PERSONA HABILITADA EN MÁS DE UN ÍTEM';
+   else if(it.discrepancy)review='DISCREPANCIA DE DECISIONES EN EL MISMO ÍTEM';
+   else if(!it.enabled&&!it.allDepurated)review='REVISAR CAUSAL / DECISIÓN PENDIENTE';
+   else if(person.multiItem&&it.enabled)review='ÚNICO ÍTEM HABILITADO';
+   else if(person.multiItem&&!it.enabled&&it.allDepurated)review='DEPURADO CON CAUSAL';
+   details.push({name:person.name,item:it.item,internalItem:it.internalItem,label:it.label,v1:it.v1,v3:it.v3,status:it.status,enabled:it.enabled?'SÍ':'NO',causeV1:it.causeV1,causeV3:it.causeV3,review});
+  }
+ }
+ details.sort((a,b)=>normalize(a.name).localeCompare(normalize(b.name),'es')||a.internalItem-b.internalItem||a.label.localeCompare(b.label,'es'));
+ return {people,details,items:departmentGlobalItems(rows)};
+}
+function styleSummarySheet(ws,{headerRow=3,lastCol=1,lastRow=3}={}){
+ ws.views=[{state:'frozen',ySplit:headerRow,xSplit:0,showGridLines:false}];
+ for(let r=1;r<=lastRow;r++){
+  const row=ws.getRow(r);
+  row.eachCell({includeEmpty:true},cell=>{
+   if(r===1||r===headerRow){cell.font={name:'Century Gothic',size:r===1?12:8,bold:true,color:{argb:'FFFFFFFF'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:r===1?'FF24456D':'FF365F91'}};cell.alignment={horizontal:r===1?'center':'center',vertical:'middle',wrapText:true};}
+   else {cell.font={name:'Century Gothic',size:8,color:{argb:'FF000000'}};cell.alignment={vertical:'top',horizontal:'left',wrapText:true};}
+   if(r>=headerRow){cell.border={top:{style:'thin',color:{argb:'FF808080'}},bottom:{style:'thin',color:{argb:'FF808080'}},left:{style:'thin',color:{argb:'FF808080'}},right:{style:'thin',color:{argb:'FF808080'}}};}
+  });
+ }
+ ws.getRow(1).height=25;ws.getRow(headerRow).height=32;
+ ws.autoFilter={from:{row:headerRow,column:1},to:{row:lastRow,column:lastCol}};
+ ws.pageSetup={orientation:'landscape',paperSize:9,fitToWidth:1,fitToHeight:0,fitToPage:true};
+ ws.pageSetup.margins={left:0.25,right:0.25,top:0.45,bottom:0.45,header:0.2,footer:0.2};
+}
+async function exportGlobalForm2Excel(){
+ const btn=$('exportGlobalForm2Btn');if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Preparando Formulario 2 global…';}
+ setSaveState('Consolidando Formulario 2 de todo La Paz…','warn');
+ try{
+  if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica tu conexión y vuelve a intentar.');
+  const rows=await fetchAllReviewersRows();const groups=departmentGlobalItems(rows);
+  if(!groups.length)throw new Error('No se identificaron ítems con registros válidos. No se generó un Excel vacío.');
+  const counts=groups.map(g=>({g,list:uniqueCandidateRows(g.rows.filter(r=>r.v1Decision==='CONTINUA'))}));
+  if(!counts.some(x=>x.list.length))throw new Error('No hay postulantes que continúen en V-1 en los universos recuperados. No se descargó un libro vacío.');
+  const binary=atob(TEMPLATE_BASE64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);const source=wb.getWorksheet('FORM 2');if(!source)throw new Error('La plantilla ANEXOS.xlsx no contiene la hoja FORM 2.');
+  const targets=[];
+  for(let i=0;i<counts.length;i++){
+   const g=counts[i].g;const name=uniqueWorksheetName(wb,exportSheetName('f2',g,i));
+   const ws=i===0?(source.name=name,source):cloneWorksheet(wb,source,name);
+   targets.push({ws,g,list:counts[i].list});
+  }
+  for(const target of targets)populateForm2(target.ws,{item:target.g.internalItem,label:target.g.label,role:target.g.label},target.list);
+  const keep=new Set(targets.map(t=>t.ws.id));for(const ws of [...wb.worksheets])if(!keep.has(ws.id))wb.removeWorksheet(ws);
+  applyOfficialWorkbookStyles(wb);if(wb.calcProperties){wb.calcProperties.fullCalcOnLoad=true;wb.calcProperties.forceFullCalc=true;}
+  const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<2500)throw new Error('El Excel del Formulario 2 quedó incompleto. No se descargó.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Formulario_2_Global_Departamento_La_Paz.xlsx');
+  const total=counts.reduce((n,x)=>n+x.list.length,0);setSaveState(`Formulario 2 global descargado ✓ · ${groups.length} ítems · ${total} registros por ítem`,'ok');
+ }catch(error){console.error('Formulario 2 global:',error);alert(`No se pudo generar el Formulario 2 global. No se descargó un libro vacío.\n\n${error?.message||String(error)}`);setSaveState('Error al exportar Formulario 2 global','error');}
+ finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Exportar Formulario 2 global';delete btn.dataset.oldText;}}
+}
+async function exportDepartmentSummaryExcel(){
+ const btn=$('exportDepartmentSummaryBtn');if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Analizando La Paz…';}
+ setSaveState('Analizando postulaciones y habilitaciones cruzadas de La Paz…','warn');
+ try{
+  if(!window.ExcelJS)throw new Error('No se pudo cargar ExcelJS. Verifica tu conexión y vuelve a intentar.');
+  const rows=await fetchAllReviewersRows();const data=buildDepartmentSummary(rows);
+  if(!data.people.length)throw new Error('No se encontraron postulantes para el resumen departamental. No se descargó un Excel vacío.');
+  const wb=new ExcelJS.Workbook();wb.creator='Sistema de Evaluación de Postulantes';wb.subject='Control departamental de postulaciones, habilitaciones y causales · La Paz';wb.created=new Date();
+  const ws=wb.addWorksheet('RESUMEN DEPARTAMENTAL',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
+  const summaryCols=[{header:'N.º',key:'n',width:7},{header:'Proponente',key:'name',width:34},{header:'Ítems postulados',key:'items',width:48},{header:'N.º de ítems',key:'itemCount',width:12},{header:'Ítems habilitados',key:'enabledItems',width:42},{header:'N.º habilitados',key:'enabledCount',width:14},{header:'Ítems depurados con causal',key:'depurated',width:42},{header:'Ítems pendientes / sin causal',key:'pending',width:42},{header:'Control departamental',key:'control',width:43},{header:'Causales registradas',key:'causes',width:60}];
+  ws.columns=summaryCols;
+  ws.mergeCells('A1:J1');ws.getCell('A1').value='RESUMEN DEPARTAMENTAL DE POSTULANTES · LA PAZ';ws.getCell('A1').font={name:'Century Gothic',size:12,bold:true,color:{argb:'FFFFFFFF'}};ws.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF24456D'}};ws.getCell('A1').alignment={horizontal:'center',vertical:'middle'};ws.getRow(1).height=25;
+  ws.mergeCells('A2:J2');ws.getCell('A2').value='Control consolidado por nombre e ítem. Una persona no debe figurar habilitada en más de un ítem. Las copias de un mismo nombre dentro del mismo ítem se consolidan; no se muestran nombres de evaluadores.';ws.getCell('A2').font={name:'Century Gothic',size:8,italic:true,color:{argb:'FF334155'}};ws.getCell('A2').alignment={horizontal:'left',vertical:'middle',wrapText:true};ws.getRow(2).height=30;
+  ws.getRow(3).values=summaryCols.map(c=>c.header);
+  data.people.forEach((p,i)=>{
+   const enabled=p.enabled.map(x=>`Ítem ${x.item} · ${x.label}`).join('\n');
+   const depurated=p.items.filter(x=>!x.enabled&&x.allDepurated).map(x=>`Ítem ${x.item} · ${x.label}`).join('\n');
+   const pending=p.items.filter(x=>!x.enabled&&!x.allDepurated||x.discrepancy).map(x=>`Ítem ${x.item} · ${x.label} (${x.status})`).join('\n');
+   const causes=p.items.map(x=>{const c=[x.causeV1,x.causeV3].filter(Boolean).join(' / ');return c?`Ítem ${x.item}: ${c}`:''}).filter(Boolean).join('\n');
+   const row=ws.addRow([i+1,p.name,p.items.map(x=>`Ítem ${x.item} · ${x.label}`).join('\n'),p.items.length,p.enabled.map(x=>`Ítem ${x.item} · ${x.label}`).join('\n'),p.enabled.length,depurated,pending,p.control,causes]);
+   row.height=Math.max(24,Math.min(100,18*Math.max(1,p.items.length)));
+   row.eachCell({includeEmpty:true},cell=>{cell.font={name:'Century Gothic',size:8,color:{argb:'FF000000'}};cell.alignment={vertical:'top',horizontal:[1,4,6].includes(cell.col)?'center':'left',wrapText:true};cell.border={top:{style:'thin',color:{argb:'FF808080'}},bottom:{style:'thin',color:{argb:'FF808080'}},left:{style:'thin',color:{argb:'FF808080'}},right:{style:'thin',color:{argb:'FF808080'}}};});
+   if(p.multiple||p.discrepancy||p.unDepurated){const color=p.multiple?'FFFFDADA':'FFFFF2CC';for(let c=1;c<=10;c++)row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:color}};row.getCell(9).font={name:'Century Gothic',size:8,bold:true,color:{argb:p.multiple?'FF9C0006':'FF7F6000'}};}
+   else if(i%2===1){for(let c=1;c<=10;c++)row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF5F8FC'}};}
+  });
+  styleSummarySheet(ws,{headerRow:3,lastCol:10,lastRow:3+data.people.length});ws.autoFilter={from:{row:3,column:1},to:{row:3+data.people.length,column:10}};ws.pageSetup.printArea=`A1:J${3+data.people.length}`;
+  const detail=wb.addWorksheet('DETALLE POR ÍTEM',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
+  const detailCols=[{header:'N.º',width:7},{header:'Proponente',width:34},{header:'Ítem',width:10},{header:'Cargo',width:42},{header:'Decisión V-1',width:25},{header:'Decisión V-3',width:22},{header:'Estado por ítem',width:31},{header:'Habilitado',width:12},{header:'Causal V-1',width:55},{header:'Causal V-3',width:55},{header:'Control',width:42}];detail.columns=detailCols;
+  detail.mergeCells('A1:K1');detail.getCell('A1').value='DETALLE DE DEPURACIÓN POR PROPONENTE E ÍTEM · LA PAZ';detail.getCell('A1').font={name:'Century Gothic',size:12,bold:true,color:{argb:'FFFFFFFF'}};detail.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF24456D'}};detail.getCell('A1').alignment={horizontal:'center',vertical:'middle'};detail.getRow(1).height=25;
+  detail.mergeCells('A2:K2');detail.getCell('A2').value='Se consolida el estado del mismo proponente dentro de cada ítem. Los casos rojos indican habilitación en más de un ítem; amarillo indica discrepancias o falta de causal/decisión completa.';detail.getCell('A2').font={name:'Century Gothic',size:8,italic:true,color:{argb:'FF334155'}};detail.getCell('A2').alignment={vertical:'middle',wrapText:true};detail.getRow(2).height=28;detail.getRow(3).values=detailCols.map(c=>c.header);
+  data.details.forEach((d,i)=>{const row=detail.addRow([i+1,d.name,d.item,d.label,d.v1,d.v3,d.status,d.enabled,d.causeV1,d.causeV3,d.review]);row.height=Math.max(24,Math.min(90,18+Math.ceil(Math.max(d.causeV1.length,d.causeV3.length)/65)*12));row.eachCell({includeEmpty:true},cell=>{cell.font={name:'Century Gothic',size:8,color:{argb:'FF000000'}};cell.alignment={vertical:'top',horizontal:[1,3,8].includes(cell.col)?'center':'left',wrapText:true};cell.border={top:{style:'thin',color:{argb:'FF808080'}},bottom:{style:'thin',color:{argb:'FF808080'}},left:{style:'thin',color:{argb:'FF808080'}},right:{style:'thin',color:{argb:'FF808080'}}};});if(d.review.includes('ALERTA')){for(let c=1;c<=11;c++)row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFDADA'}};row.getCell(11).font={name:'Century Gothic',size:8,bold:true,color:{argb:'FF9C0006'}};}else if(d.review){for(let c=1;c<=11;c++)row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF2CC'}};}else if(i%2===1){for(let c=1;c<=11;c++)row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF5F8FC'}};}});
+  styleSummarySheet(detail,{headerRow:3,lastCol:11,lastRow:3+data.details.length});detail.autoFilter={from:{row:3,column:1},to:{row:3+data.details.length,column:11}};detail.pageSetup.printArea=`A1:K${3+data.details.length}`;
+  const buffer=await wb.xlsx.writeBuffer();if(!buffer||buffer.byteLength<3000)throw new Error('El resumen departamental quedó incompleto. No se descargó un archivo vacío.');
+  downloadBlob(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Resumen_Departamental_La_Paz_Control_Habilitaciones.xlsx');
+  const multi=data.people.filter(p=>p.multiple).length;const needsReview=data.people.filter(p=>p.discrepancy||p.unDepurated).length;setSaveState(`Resumen departamental generado ✓ · ${data.people.length} personas · ${multi} con habilitación en varios ítems · ${needsReview} requieren revisión`,'ok');
+ }catch(error){console.error('Resumen departamental La Paz:',error);alert(`No se pudo generar el resumen departamental. No se descargó un libro vacío.\n\n${error?.message||String(error)}`);setSaveState('Error al generar resumen departamental','error');}
+ finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Excel resumen departamental La Paz';delete btn.dataset.oldText;}}
 }
 function activateTab(name){document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.id==='tab-'+name));if(name==='form1')renderForm1();if(name==='form2')renderForm2();if(name==='form3')renderForm3();if(name==='form4')renderForm4();if(name==='global4'&&!globalForm4Loaded)loadGlobalForm4({silent:true}).catch(()=>{});const target=$('tab-'+name);if(target)target.scrollIntoView({behavior:'auto',block:'start'});}
 function syncHorizontalScroll(){/* Se usa una sola barra horizontal nativa para evitar oscilaciones entre dos contenedores sincronizados. */}
@@ -1138,12 +1315,12 @@ function confirmWordReportReview(selected){
   return {...it,proponents,includedCount,evaluated,enabled,possible:scored.length,tiedCount,missing:proponents===0,reviewReason};
  });
  const totals=perItem.reduce((a,it)=>({proponents:a.proponents+it.proponents,includedCount:a.includedCount+it.includedCount,evaluated:a.evaluated+it.evaluated,enabled:a.enabled+it.enabled,possible:a.possible+it.possible,tied:a.tied+it.tiedCount}),{proponents:0,includedCount:0,evaluated:0,enabled:0,possible:0,tied:0});
- $('exportReviewTitle').textContent='Revisión previa · Informe Word · LP-1.9.3';
+ $('exportReviewTitle').textContent='Revisión previa · Informe Word · LP-1.9.4';
  $('cancelExportReviewBtn').textContent='Volver a revisar';$('acceptExportReviewBtn').textContent='Confirmar y generar Word';
- $('exportReviewSummary').innerHTML=`<div class="notice"><strong>Versión del sistema: LP-1.9.3.</strong> Se revisan todos los universos guardados de los revisores seleccionados, no solo la pestaña activa. “Proponentes cargados” cuenta personas únicas encontradas en el sistema; “incluidos en Word” cuenta los marcados para el informe. Rojo significa que no hay datos cargados para ese cargo; amarillo indica que el cargo requiere revisión, por ejemplo por falta de selección, ausencia de habilitados o empate.</div><div class="export-review-section"><h3>Resumen por cargo · numeración visible: supervisores 1–15 y encuestadores 1–45</h3><div class="tablewrap" style="max-height:none;min-width:0;overflow:visible"><table style="min-width:0;width:100%;border-collapse:collapse"><thead><tr><th style="position:static">Ítem</th><th style="position:static">Cargo</th><th style="position:static;text-align:center">Proponentes cargados</th><th style="position:static;text-align:center">Incluidos en Word</th><th style="position:static;text-align:center">Evaluados</th><th style="position:static;text-align:center">Habilitados</th><th style="position:static;text-align:center">Posibles adjudicados (&gt;50)</th><th style="position:static;text-align:center">Empatados en nota máxima</th><th style="position:static">Estado</th></tr></thead><tbody>${perItem.map(it=>`<tr class="${it.missing?'preview-missing':it.reviewReason?'preview-review':''}"><td>${displayItemNoFromLabel(it.item,it.label)}</td><td>${esc(it.label||'Cargo no identificado')}</td><td style="text-align:center;font-weight:800">${it.proponents}</td><td style="text-align:center">${it.includedCount}</td><td style="text-align:center">${it.evaluated}</td><td style="text-align:center">${it.enabled}</td><td style="text-align:center">${it.possible}</td><td style="text-align:center">${it.tiedCount||'—'}</td><td>${esc(it.reviewReason||'OK')}</td></tr>`).join('')||'<tr><td colspan="9">No hay ítems en el universo seleccionado.</td></tr>'}</tbody><tfoot><tr><th colspan="2" style="position:static;text-align:right">Totales</th><th style="position:static;text-align:center">${totals.proponents}</th><th style="position:static;text-align:center">${totals.includedCount}</th><th style="position:static;text-align:center">${totals.evaluated}</th><th style="position:static;text-align:center">${totals.enabled}</th><th style="position:static;text-align:center">${totals.possible}</th><th style="position:static;text-align:center">${totals.tied||'—'}</th><th style="position:static">Rojo: sin datos cargados. Amarillo: requiere revisión.</th></tr></tfoot></table></div></div>`;
+ $('exportReviewSummary').innerHTML=`<div class="notice"><strong>Versión del sistema: LP-1.9.4.</strong> Se revisan todos los universos guardados de los revisores seleccionados, no solo la pestaña activa. “Proponentes cargados” cuenta personas únicas encontradas en el sistema; “incluidos en Word” cuenta los marcados para el informe. Rojo significa que no hay datos cargados para ese cargo; amarillo indica que el cargo requiere revisión, por ejemplo por falta de selección, ausencia de habilitados o empate.</div><div class="export-review-section"><h3>Resumen por cargo · numeración visible: supervisores 1–15 y encuestadores 1–45</h3><div class="tablewrap" style="max-height:none;min-width:0;overflow:visible"><table style="min-width:0;width:100%;border-collapse:collapse"><thead><tr><th style="position:static">Ítem</th><th style="position:static">Cargo</th><th style="position:static;text-align:center">Proponentes cargados</th><th style="position:static;text-align:center">Incluidos en Word</th><th style="position:static;text-align:center">Evaluados</th><th style="position:static;text-align:center">Habilitados</th><th style="position:static;text-align:center">Posibles adjudicados (&gt;50)</th><th style="position:static;text-align:center">Empatados en nota máxima</th><th style="position:static">Estado</th></tr></thead><tbody>${perItem.map(it=>`<tr class="${it.missing?'preview-missing':it.reviewReason?'preview-review':''}"><td>${displayItemNoFromLabel(it.item,it.label)}</td><td>${esc(it.label||'Cargo no identificado')}</td><td style="text-align:center;font-weight:800">${it.proponents}</td><td style="text-align:center">${it.includedCount}</td><td style="text-align:center">${it.evaluated}</td><td style="text-align:center">${it.enabled}</td><td style="text-align:center">${it.possible}</td><td style="text-align:center">${it.tiedCount||'—'}</td><td>${esc(it.reviewReason||'OK')}</td></tr>`).join('')||'<tr><td colspan="9">No hay ítems en el universo seleccionado.</td></tr>'}</tbody><tfoot><tr><th colspan="2" style="position:static;text-align:right">Totales</th><th style="position:static;text-align:center">${totals.proponents}</th><th style="position:static;text-align:center">${totals.includedCount}</th><th style="position:static;text-align:center">${totals.evaluated}</th><th style="position:static;text-align:center">${totals.enabled}</th><th style="position:static;text-align:center">${totals.possible}</th><th style="position:static;text-align:center">${totals.tied||'—'}</th><th style="position:static">Rojo: sin datos cargados. Amarillo: requiere revisión.</th></tr></tfoot></table></div></div>`;
  $('exportReviewIssues').innerHTML='';$('exportReviewIssues').classList.add('hide');
  const restore=()=>{$('cancelExportReviewBtn').textContent='Cancelar descarga';$('acceptExportReviewBtn').textContent='Confirmar y descargar';};
- if(!dialog||typeof dialog.showModal!=='function'){restore();return Promise.resolve(confirm(`Revisión previa del informe Word · LP-1.9.3\n${perItem.map(it=>`Ítem ${displayItemNoFromLabel(it.item,it.label)}: cargados ${it.proponents}, incluidos ${it.includedCount}, evaluados ${it.evaluated}, habilitados ${it.enabled}, posibles adjudicados ${it.possible}, empate nota máxima ${it.tiedCount||0}${it.reviewReason?`, REVISAR: ${it.reviewReason}`:''}`).join('\\n')}\n\n¿Generar Word?`));}
+ if(!dialog||typeof dialog.showModal!=='function'){restore();return Promise.resolve(confirm(`Revisión previa del informe Word · LP-1.9.4\n${perItem.map(it=>`Ítem ${displayItemNoFromLabel(it.item,it.label)}: cargados ${it.proponents}, incluidos ${it.includedCount}, evaluados ${it.evaluated}, habilitados ${it.enabled}, posibles adjudicados ${it.possible}, empate nota máxima ${it.tiedCount||0}${it.reviewReason?`, REVISAR: ${it.reviewReason}`:''}`).join('\\n')}\n\n¿Generar Word?`));}
  dialog.returnValue='cancel';dialog.showModal();return new Promise(resolve=>{const done=()=>{dialog.removeEventListener('close',done);restore();resolve(dialog.returnValue==='accept');};dialog.addEventListener('close',done);});
 }
 async function generateWordReport(){
@@ -1209,7 +1386,7 @@ $('f3Rows').addEventListener('change',e=>{const el=e.target;if(!el.dataset.key||
 $('causeOptions').addEventListener('change',()=>{activeCause.selected=selectedCauseId();updateOtherVisibility();});$('causeSearch').addEventListener('input',()=>{const type=activeCause.type||'v1';renderCauseOptions(type==='v1'?CAUSALS_V1:CAUSALS_V3,activeCause.selected||'');});$('saveCause').addEventListener('click',saveCauseSelection);$('cancelCause').addEventListener('click',()=>$('causeDialog').close());$('closeCauseTop').addEventListener('click',()=>$('causeDialog').close());
 $('toggleCriteria').addEventListener('click',()=>{const c=$('criteriaContent');const hidden=c.classList.toggle('hide');$('toggleCriteria').textContent=hidden?'Mostrar criterios':'Contraer criterios';});
 $('closeExportReviewTop').addEventListener('click',()=>{$('exportReviewDialog').close('cancel');});$('cancelExportReviewBtn').addEventListener('click',()=>{$('exportReviewDialog').close('cancel');});$('acceptExportReviewBtn').addEventListener('click',()=>{$('exportReviewDialog').close('accept');});
-$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);$('exportAllReviewersBtn').addEventListener('click',exportAllReviewersWorkbook);$('printAnnexesBtn').addEventListener('click',downloadForm1AnnexesWord);$('exportReportBtn').addEventListener('click',openReportDialog);$('closeReportTop').addEventListener('click',()=>$('reportDialog').close());$('cancelReportBtn').addEventListener('click',()=>$('reportDialog').close());$('generateReportBtn').addEventListener('click',generateWordReport);$('reportSearch').addEventListener('input',renderReportSelection);$('reportItemFilter').addEventListener('change',renderReportSelection);$('reportReviewerList').addEventListener('change',async e=>{const cb=e.target.closest('input[data-report-module]');if(!cb)return;const id=String(cb.dataset.reportModule);if(cb.checked)reportSelectedModules.add(id);else{reportSelectedModules.delete(id);for(const key of [...reportSelectedIds])if(String(key).startsWith(`${id}:`))reportSelectedIds.delete(key);}try{await loadReportSelectionData();}catch(error){console.error(error);$('reportSelectionCount').textContent='No se pudieron cargar algunos revisores. Revisa la conexión y vuelve a intentarlo.';}});$('reportUserList').addEventListener('change',e=>{const cb=e.target.closest('input[data-report-key]');if(!cb)return;const key=String(cb.dataset.reportKey);if(cb.checked)reportSelectedIds.add(key);else reportSelectedIds.delete(key);$('reportSelectionCount').textContent=`${reportSelectedIds.size} seleccionados · ${reportRows().length} postulantes de ${reportSelectedModules.size} revisor(es)`;});$('reportSelectVisibleBtn').addEventListener('click',()=>{$('reportUserList').querySelectorAll('input[data-report-key]').forEach(cb=>reportSelectedIds.add(String(cb.dataset.reportKey)));renderReportSelection();});$('reportClearBtn').addEventListener('click',()=>{reportSelectedIds.clear();renderReportSelection();});$('loadReportTemplateBtn').addEventListener('click',()=>$('reportTemplateFile').click());$('reportTemplateFile').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(!f.name.toLowerCase().endsWith('.docx'))throw new Error('Selecciona un archivo Word .docx.');reportTemplateBytes=await f.arrayBuffer();reportTemplateName=f.name;$('reportTitle').textContent=`Generar informe Word · Modelo: ${reportTemplateName}`;alert(`Modelo Word cargado para esta sesión: ${reportTemplateName}.`);}catch(err){alert(err.message||String(err));}finally{e.target.value='';}});$('renameModuleBtn').addEventListener('click',renameActiveModule);$('downloadUniverseTemplateBtn').addEventListener('click',downloadUniverseTemplate);$('addPersonBtn').addEventListener('click',openAddPersonDialog);$('personForm').addEventListener('submit',addPersonManual);$('cancelPerson').addEventListener('click',()=>$('personDialog').close());$('closePersonTop').addEventListener('click',()=>$('personDialog').close());$('personItemNo').addEventListener('change',()=>{const n=Number($('personItemNo').value);if(activeModule==='principal'){const current=$('personItemLabel').value;const type=/ENCUESTADOR/i.test(current)?'ENCUESTADOR':'SUPERVISOR';const it=ITEMS.find(x=>displayItemNo(x)===n&&String(x.type||'').toUpperCase()===type)||ITEMS.find(x=>displayItemNo(x)===n);if(it)$('personItemLabel').value=it.label;}else{const existing=allRecords.find(r=>r.universe===currentUniverse&&Number(r.itemNo)===n);if(existing)$('personItemLabel').value=existing.itemLabel||existing.role;}});$('importUniverseBtn').addEventListener('click',()=>$('universeFile').click());$('universeFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importUniverseFile(file);e.target.value='';});$('moduleTabs').addEventListener('click',e=>{const b=e.target.closest('[data-module]');if(b)switchModule(b.dataset.module);});$('universeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-universe]');if(b)switchUniverse(b.dataset.universe);});document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);
+$('exportOfficialBtn').addEventListener('click',exportOfficialWorkbook);$('exportAllReviewersBtn').addEventListener('click',exportAllReviewersWorkbook);$('exportGlobalForm2Btn').addEventListener('click',exportGlobalForm2Excel);$('exportDepartmentSummaryBtn').addEventListener('click',exportDepartmentSummaryExcel);$('printAnnexesBtn').addEventListener('click',downloadForm1AnnexesWord);$('exportReportBtn').addEventListener('click',openReportDialog);$('closeReportTop').addEventListener('click',()=>$('reportDialog').close());$('cancelReportBtn').addEventListener('click',()=>$('reportDialog').close());$('generateReportBtn').addEventListener('click',generateWordReport);$('reportSearch').addEventListener('input',renderReportSelection);$('reportItemFilter').addEventListener('change',renderReportSelection);$('reportReviewerList').addEventListener('change',async e=>{const cb=e.target.closest('input[data-report-module]');if(!cb)return;const id=String(cb.dataset.reportModule);if(cb.checked)reportSelectedModules.add(id);else{reportSelectedModules.delete(id);for(const key of [...reportSelectedIds])if(String(key).startsWith(`${id}:`))reportSelectedIds.delete(key);}try{await loadReportSelectionData();}catch(error){console.error(error);$('reportSelectionCount').textContent='No se pudieron cargar algunos revisores. Revisa la conexión y vuelve a intentarlo.';}});$('reportUserList').addEventListener('change',e=>{const cb=e.target.closest('input[data-report-key]');if(!cb)return;const key=String(cb.dataset.reportKey);if(cb.checked)reportSelectedIds.add(key);else reportSelectedIds.delete(key);$('reportSelectionCount').textContent=`${reportSelectedIds.size} seleccionados · ${reportRows().length} postulantes de ${reportSelectedModules.size} revisor(es)`;});$('reportSelectVisibleBtn').addEventListener('click',()=>{$('reportUserList').querySelectorAll('input[data-report-key]').forEach(cb=>reportSelectedIds.add(String(cb.dataset.reportKey)));renderReportSelection();});$('reportClearBtn').addEventListener('click',()=>{reportSelectedIds.clear();renderReportSelection();});$('loadReportTemplateBtn').addEventListener('click',()=>$('reportTemplateFile').click());$('reportTemplateFile').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(!f.name.toLowerCase().endsWith('.docx'))throw new Error('Selecciona un archivo Word .docx.');reportTemplateBytes=await f.arrayBuffer();reportTemplateName=f.name;$('reportTitle').textContent=`Generar informe Word · Modelo: ${reportTemplateName}`;alert(`Modelo Word cargado para esta sesión: ${reportTemplateName}.`);}catch(err){alert(err.message||String(err));}finally{e.target.value='';}});$('renameModuleBtn').addEventListener('click',renameActiveModule);$('downloadUniverseTemplateBtn').addEventListener('click',downloadUniverseTemplate);$('addPersonBtn').addEventListener('click',openAddPersonDialog);$('personForm').addEventListener('submit',addPersonManual);$('cancelPerson').addEventListener('click',()=>$('personDialog').close());$('closePersonTop').addEventListener('click',()=>$('personDialog').close());$('personItemNo').addEventListener('change',()=>{const n=Number($('personItemNo').value);if(activeModule==='principal'){const current=$('personItemLabel').value;const type=/ENCUESTADOR/i.test(current)?'ENCUESTADOR':'SUPERVISOR';const it=ITEMS.find(x=>displayItemNo(x)===n&&String(x.type||'').toUpperCase()===type)||ITEMS.find(x=>displayItemNo(x)===n);if(it)$('personItemLabel').value=it.label;}else{const existing=allRecords.find(r=>r.universe===currentUniverse&&Number(r.itemNo)===n);if(existing)$('personItemLabel').value=existing.itemLabel||existing.role;}});$('importUniverseBtn').addEventListener('click',()=>$('universeFile').click());$('universeFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importUniverseFile(file);e.target.value='';});$('moduleTabs').addEventListener('click',e=>{const b=e.target.closest('[data-module]');if(b)switchModule(b.dataset.module);});$('universeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-universe]');if(b)switchUniverse(b.dataset.universe);});document.querySelectorAll('[data-export="form1"],[data-export="form2"],[data-export="form3"],[data-export="form4"]').forEach(b=>b.addEventListener('click',()=>exportFormWorkbook(b.dataset.export)));$('refreshBtn').addEventListener('click',refreshView);$('undoBtn').addEventListener('click',undoChange);$('redoBtn').addEventListener('click',redoChange);
 $('backupBtn').addEventListener('click',downloadBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importBackupFile(file);e.target.value='';});
 $('resetBtn').addEventListener('click',()=>{if(!confirm(`¿Restablecer las evaluaciones, causales y puntajes del universo “${currentUniverseName()}”? Se conservarán los nombres, cargos e ítems de este universo.`))return;pushHistory();records=records.map(r=>({...r,a1:'',a2:'',c1doc:'',c2doc:'',v1Decision:'',v1Cause:'',v1Other:'',v3Status:'',v3Cause:'',v3Other:'',education:'',general:'',specific:'',notes:''}));persistNow();renderAll();syncAllToCloud();});
 $('f1TopBtn').addEventListener('click',()=>{$('f1TableWrap').scrollTo({left:0,top:0,behavior:'auto'});$('f1TopScroll').scrollTo({left:0,behavior:'auto'});});$('toTopBtn').addEventListener('click',()=>$('top').scrollIntoView({behavior:'auto'}));
