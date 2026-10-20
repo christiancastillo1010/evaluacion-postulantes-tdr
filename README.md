@@ -51,29 +51,29 @@ El segundo bloque del Formulario 1 etiquetado con número de ítem 6 (filas 47�
 No se ha desplegado directamente en la cuenta Cloudflare; debe completarse el commit y verificarse el sitio publicado.
 
 
-## Versión LP-1.9.0 (18/10/2026)
+## Versión LP-1.9.6 (18/10/2026)
 - Identificador de versión visible en la cabecera y en la revisión previa del informe Word.
 - Resumen previo por ítem: proponentes incluidos, habilitados, posibles adjudicados con puntaje final superior a 50 y personas empatadas en la nota máxima. Los ítems sin proponentes incluidos se resaltan en rojo.
 - La tabla de recomendaciones genera una sola fila por ítem y propone únicamente al postulante con la nota máxima superior a 50. Si no hay proponentes incluidos, nadie supera 50 o existe empate en la nota máxima, la fila queda resaltada en amarillo para revisión manual.
 - Se mantiene la base D1 y el binding `DB` existentes.
 
 
-Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin desplazamiento interno en escritorio, conteo de evaluados, habilitados y posibles adjudicados por ítem; acefalías identificadas con el universo completo de los revisores incluidos cuando no hay habilitados o no existe posible adjudicado con puntaje superior a 50; plantilla Word corregida para reemplazar todas las referencias a Santa Cruz por La Paz.
+Actualización LP-1.9.6: pop-up previo ampliado para mostrar el universo sin desplazamiento interno en escritorio, conteo de evaluados, habilitados y posibles adjudicados por ítem; acefalías identificadas con el universo completo de los revisores incluidos cuando no hay habilitados o no existe posible adjudicado con puntaje superior a 50; plantilla Word corregida para reemplazar todas las referencias a Santa Cruz por La Paz.
 
 
-## LP-1.9.0
+## LP-1.9.6
 - La revisión previa consulta todos los universos guardados de los revisores seleccionados; no limita el informe al universo activo en la pestaña.
 - Distingue proponentes cargados de proponentes incluidos en Word; solo marca rojo si no hay registros cargados para el cargo.
 - Las notas sobre puntajes menores a 50 y los empates aparecen debajo del cuadro del ítem correspondiente.
 
 
-## LP-1.9.0 — Exportación global corregida
+## LP-1.9.6 — Exportación global corregida
 - La exportación global por evaluador incluye todos los universos guardados y crea nombres de pestaña únicos por grupo para evitar el error “Worksheet name already exists”.
 - Se añade “Exportación global · todos los revisores”, que recupera datos de todos los módulos desde Cloudflare y exporta los cuatro formularios por ítem, revisor y universo.
 - Si un módulo no se puede recuperar desde Cloudflare, la exportación global completa se cancela con un error explícito para evitar generar un libro parcial.
 
 
-## LP-1.9.0 — Impresión de anexos Formulario 1
+## LP-1.9.6 — Impresión de anexos Formulario 1
 - Se añade el botón “Imprimir anexos · Formulario 1”.
 - Abre una vista de impresión con todos los formularios preliminares de todos los revisores y universos, organizados por revisor, universo e ítem.
 - Orientación horizontal A4, márgenes amplios, anchos de columna definidos, bordes completos, encabezados de tabla repetidos al continuar en otra página y filas que procuran no partirse entre páginas.
@@ -81,7 +81,7 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - La impresión recupera datos desde Cloudflare y cancela con un mensaje si no puede recuperar todos los módulos.
 
 
-## LP-1.9.0 — Anexos Word Formulario 1
+## LP-1.9.6 — Anexos Word Formulario 1
 - Se añade descarga DOCX de los anexos del Formulario 1 en un documento Word horizontal.
 - Cada cuadro lleva únicamente un título con número de ítem y descripción de cargo.
 - La tabla replica las 17 columnas del modelo oficial ANEXOS.xlsx, sin columnas adicionales, nombres de evaluadores ni encabezados extra.
@@ -89,7 +89,7 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - Los nombres de pestañas y archivos Excel ya no incluyen identificadores de evaluadores.
 
 
-## LP-1.9.5 · Visualizador global del Formulario 4
+## LP-1.9.6 · Visualizador global del Formulario 4
 
 - Añade la pestaña **Visualizador global · todos los ítems**, consolidando los proponentes habilitados de todos los módulos y universos sin mostrar columnas de revisor.
 - Añade **Descargar Excel global · Formulario 4**: un único cuadro/hoja, con N.º, ítem, cargo, proponente, C-1, C-2, puntaje final y estado de puntajes.
@@ -97,13 +97,19 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - Si no se puede recuperar el conjunto global completo, el visualizador/exportador informa el error y no genera un archivo parcial.
 
 
-## LP-1.9.5 — Exportación global Formulario 2 y control departamental
+## LP-1.9.6 — Exportación global Formulario 2 y control departamental
 - Añade un exportador oficial global del Formulario 2 que consolida los ítems de todos los módulos y universos, sin mostrar nombres de evaluadores.
 - Añade un libro Excel de resumen departamental con una hoja de resumen por persona y una hoja de detalle por ítem, identificando habilitaciones cruzadas, discrepancias y causales de descalificación.
 - Los registros repetidos del mismo proponente en el mismo ítem se consolidan para el control departamental; la habilitación en más de un ítem se marca en rojo.
 
 
-## LP-1.9.5 — Word de apertura de propuestas electrónicas
+## LP-1.9.6 — Word de apertura de propuestas electrónicas
 - Nuevo botón para descargar un documento Word con los cuadros de apertura organizados por ítem y cargo.
 - Consolida registros de todos los módulos y universos, sin identificar revisores en el documento.
 - Cada cuadro conserva las columnas del modelo de apertura, con títulos por ítem/cargo, orientación horizontal y encabezados repetidos en saltos de página.
+
+
+## LP-1.9.6 — Modelo correcto para cuadros de apertura
+- El botón de Word usa la tabla completa del Formulario 1 del modelo Word: cargo, UNA VACANCIA, N.º, proponente y las columnas A-1, A-2, C-1 y C-2 con SI/NO.
+- Se sustituyó la tabla de resumen de apertura que no correspondía al modelo solicitado.
+- Documento horizontal, sin nombres de revisores y con las referencias a Santa Cruz corregidas a La Paz.
