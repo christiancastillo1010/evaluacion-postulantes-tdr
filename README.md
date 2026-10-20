@@ -89,7 +89,7 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - Los nombres de pestañas y archivos Excel ya no incluyen identificadores de evaluadores.
 
 
-## LP-1.9.4 · Visualizador global del Formulario 4
+## LP-1.9.5 · Visualizador global del Formulario 4
 
 - Añade la pestaña **Visualizador global · todos los ítems**, consolidando los proponentes habilitados de todos los módulos y universos sin mostrar columnas de revisor.
 - Añade **Descargar Excel global · Formulario 4**: un único cuadro/hoja, con N.º, ítem, cargo, proponente, C-1, C-2, puntaje final y estado de puntajes.
@@ -97,7 +97,13 @@ Actualización LP-1.9.0: pop-up previo ampliado para mostrar el universo sin des
 - Si no se puede recuperar el conjunto global completo, el visualizador/exportador informa el error y no genera un archivo parcial.
 
 
-## LP-1.9.4 — Exportación global Formulario 2 y control departamental
+## LP-1.9.5 — Exportación global Formulario 2 y control departamental
 - Añade un exportador oficial global del Formulario 2 que consolida los ítems de todos los módulos y universos, sin mostrar nombres de evaluadores.
 - Añade un libro Excel de resumen departamental con una hoja de resumen por persona y una hoja de detalle por ítem, identificando habilitaciones cruzadas, discrepancias y causales de descalificación.
 - Los registros repetidos del mismo proponente en el mismo ítem se consolidan para el control departamental; la habilitación en más de un ítem se marca en rojo.
+
+
+## LP-1.9.5 — Word de apertura de propuestas electrónicas
+- Nuevo botón para descargar un documento Word con los cuadros de apertura organizados por ítem y cargo.
+- Consolida registros de todos los módulos y universos, sin identificar revisores en el documento.
+- Cada cuadro conserva las columnas del modelo de apertura, con títulos por ítem/cargo, orientación horizontal y encabezados repetidos en saltos de página.
